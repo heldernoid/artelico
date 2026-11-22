@@ -44,7 +44,7 @@ enum SampleMedia {
     static let allVideos = [street, office, drive, aerial, squats, face, text, highway, parcels, toy]
 
     /// The repository commit that holds the videos.
-    static let videoBase = URL(string: "https://huggingface.co/helmo/artelico-models/resolve/71694465b3bcc0d4499ceee2243d428d40735b8b/samples/videos/")!
+    static let videoBase = URL(string: "https://huggingface.co/helmo/artelico-models/resolve/f9537295cef67e21ed9045aa959de4b6722ef833/samples/videos/")!
 
     static var videoFolder: URL {
         let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -65,7 +65,7 @@ enum SampleMedia {
         "lane_detection.mp4": (17_715_707, "05f1b850355a8f6b36ae40904efa783b804d25bb62da06895eb86a1c5e0c5234"),
         "ocr.mp4": (1_095_611, "54419e5380e9bbbdf12173e6eb2191dcc37e44d4ece86c569edad8cb426e1bd5"),
         "tiling_visdrone_720p.mp4": (3_946_582, "2e2d965950dc5e9855fc571a80288a7df55b5810e308ce6b18e3f83bcb89e278"),
-        "walk_in_room.mp4": (52_415_199, "c4967adf53778f614d2e65536bf6fd4e0186649b8a9136d7e126808e5b7c5554"),
+        "walk_in_room.mp4": (15_249_127, "2fd0ecdece9d11ca17a804e713d38b19dd6333f421e3fd44b47da92a811d7e98"),   // re-encoded: seekable keyframes
     ]
 
     /// The video on this device, downloading it the first time. A download is kept only when its SHA-256

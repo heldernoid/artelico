@@ -19,7 +19,7 @@ export const VIDEOS = {
 export const isVideo = (file) => file.endsWith(".mp4");
 
 /** The same files at a fixed commit of the Artelico model repository (as the apps download them). */
-export const VIDEOS_ONLINE = "https://huggingface.co/helmo/artelico-models/resolve/71694465b3bcc0d4499ceee2243d428d40735b8b/samples/videos/";
+export const VIDEOS_ONLINE = "https://huggingface.co/helmo/artelico-models/resolve/f9537295cef67e21ed9045aa959de4b6722ef833/samples/videos/";
 
 /** samples/videos/<file> when this site has it, else the copy on Hugging Face (a checkout without the videos). */
 export async function sampleVideoURL(file) {

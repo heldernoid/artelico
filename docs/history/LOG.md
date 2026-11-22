@@ -3477,3 +3477,13 @@ Step 117's fix, ported to Artelico Web (and so the Space, through web/tools/buil
 - Samples show a preview everywhere: web demos and Live draw the picture or the video's first frame (runner.previewFrame)
   and keep the chosen sample in the menu; the apps' Samples menus (demos, Speech) are named after the chosen sample.
   Headless: Raise hand to flip + office video → preview, menu shows it, "Press Start…", nothing downloaded.
+
+## Step 130: the office sample video stalled the web demos (2026-11-22)
+
+- Pose demos on "Two people in an office" (walk_in_room.mp4) ran at 0-1 FPS on the web (Chrome and Firefox): after
+  0.6 s both the video and its sound element hit MEDIA_ERR_DECODE on seeking, and every later seek timed out (2 s).
+  ffmpeg decodes it fine; a remux (sane time base) did not help, so its keyframes are not seekable by browsers.
+- Re-encoded (libx264 CRF 23, 30 FPS, keyframe every second, no sound track): 15.2 MB instead of 52.4 MB; 30 FPS
+  in the demo. All 11 sample videos seek without failures in headless Chrome now.
+- Uploaded to helmo/artelico-models samples/videos with a README (source, licence, the change): revision f9537295.
+  VIDEOS_ONLINE (web) and SampleMedia.videoBase + videoChecks (apps) point to it. web/samples/videos has the new file.
