@@ -49,6 +49,7 @@ a { color: var(--accent); }
 .status { margin: 8px; padding: 10px 12px; border-radius: 12px; background: var(--panel-2); font-size: 13px; }
 .status .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--ok); margin-right: 6px; }
 .status .muted { color: var(--muted); }
+.about { margin: 0 16px 12px; font-size: 12px; line-height: 1.4; color: var(--muted); }
 
 .content { flex: 1; min-width: 0; padding: 20px 24px 40px; }
 .topbar { display: none; }
