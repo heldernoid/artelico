@@ -3467,3 +3467,6 @@ Step 117's fix, ported to Artelico Web (and so the Space, through web/tools/buil
   otherwise "Press Run to download … (N MB)". Speech to text: a sample or file waits for Transcribe until Whisper
   was downloaded once; Meeting notes has a Write notes button. Checked headless: nothing downloaded on opening,
   Run downloaded and ran (4 person, 1 bus), the next sample ran at once; Speech sample → "Press Transcribe", no download.
+- Follow-up: Photos re-checks when the model or task changes (the message named the first model); demo screens
+  (examples/kit.js) start on a chosen sample only if the models are here, else "Press Start to download … (N MB)".
+  Headless: yolov9c → "Press Run to download yolov9c (101 MB)"; Squat alarm sample → "Press Start …", nothing downloaded.

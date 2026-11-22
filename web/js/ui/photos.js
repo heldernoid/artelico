@@ -15,9 +15,10 @@ export function mount(view, app) {
   let task = store.get("photos.task", "detection");
   if (!tasks.some(([t]) => t === task)) task = tasks[0]?.[0] ?? "detection";
 
-  const taskSelect = el("select", { "aria-label": "Task", onchange: () => { task = taskSelect.value; store.set("photos.task", task); models.dataset.task = task; models.refill(task); showTaskNote(); } },
+  const taskSelect = el("select", { "aria-label": "Task", onchange: () => { task = taskSelect.value; store.set("photos.task", task); models.dataset.task = task; models.refill(task); showTaskNote(); runIfHere(); } },
     tasks.map(([t, info]) => el("option", { value: t, selected: t === task }, info.title)));
   const models = modelSelect(task, app, "photos.model");
+  models.addEventListener("change", () => runIfHere());
   models.dataset.task = task;
   const file = el("input", { type: "file", accept: "image/*", hidden: true, onchange: async () => { if (file.files[0]) { setPicture(await imageFromFile(file.files[0])); credit.show(null); } } });
   const credit = creditTag();
@@ -68,13 +69,20 @@ export function mount(view, app) {
     if (res) drawResult(ctx, res, canvas.width, canvas.height);
   }
 
-  // A new picture runs at once only when the model is already here; the first download waits for Run.
+  // A new picture (or another model or task) runs at once only when the model is already here; otherwise it says
+  // what Run would download, and waits.
   async function setPicture(p) {
     picture = p; result.textContent = ""; timing.textContent = ""; draw(null);
-    if (!models.value) return;
-    const extras = companionsFor(task, Catalog.model(models.value));
-    if (await app.isDownloaded(models.value, extras)) { go(); return; }
-    result.textContent = `Press Run to download ${app.downloadLabel([models.value, ...extras.filter((n) => !app.engine.loadedModelNames.includes(n))])} and run it. It is kept in this browser for next time.`;
+    await runIfHere();
+  }
+  async function runIfHere() {
+    if (!picture || !models.value || app.busy) return;
+    const chosen = models.value;
+    const missing = await app.notDownloaded(chosen, companionsFor(task, Catalog.model(chosen)));
+    if (chosen !== models.value) return;   // changed again meanwhile
+    if (!missing.length) { go(); return; }
+    draw(null); timing.textContent = "";
+    result.textContent = app.pressToDownload("Run", missing);
   }
 
   async function go() {

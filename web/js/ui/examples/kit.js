@@ -108,7 +108,7 @@ export function exampleScreen(view, app, o) {
 
   const button = el("button.button.primary", { onclick: () => (runner.running ? runner.stop() : start()) }, "Start");
   async function start() {
-    message.textContent = "";
+    message.className = "error small"; message.textContent = "";
     tracker.reset();
     try {
       button.textContent = "Stop"; button.className = "button danger";
@@ -123,10 +123,13 @@ export function exampleScreen(view, app, o) {
   const samples = o.samples?.length
     ? el("select", { "aria-label": "Samples", onchange: async () => {
         if (!samples.value) return;
+        const wasRunning = runner.running;
         await runner.useSample(samples.value);
         samples.value = "";
-        if (runner.running) { runner.stop(); while (runner.running) await new Promise((r) => setTimeout(r, 20)); }
-        start();
+        if (wasRunning) { runner.stop(); while (runner.running) await new Promise((r) => setTimeout(r, 20)); start(); return; }
+        // Starts by itself only when the models are already here; a download waits for Start.
+        const missing = await app.notDownloaded(models.value, runner.extras());
+        if (!missing.length) start(); else { message.className = "small muted"; message.textContent = app.pressToDownload("Start", missing); }
       } }, el("option", { value: "" }, "Samples…"), o.samples.map(([t, f]) => el("option", { value: f }, t)))
     : null;
   runner.onSourceShown = credit.show;

@@ -42,18 +42,24 @@ export const app = {
    * cache (or the chosen models folder). Screens run on their own only then; otherwise they wait for Run, so a
    * download always starts from the user's click.
    */
-  async isDownloaded(name, extras = []) {
+  async isDownloaded(name, extras = []) { return (await this.notDownloaded(name, extras)).length === 0; },
+
+  /** Which of `name` and its `extras` would have to be downloaded first. */
+  async notDownloaded(name, extras = []) {
+    const missing = [];
     for (const n of [name, ...extras]) {
       if (this.engine.loadedModelNames.includes(n)) continue;
-      try { if (!(await this.source.cached?.(n))) return false; } catch { return false; }
+      let here = false;
+      try { here = !!(await this.source.cached?.(n)); } catch { /* not here */ }
+      if (!here) missing.push(n);
     }
-    return true;
+    return missing;
   },
 
-  /** "yolov5m_wo_spp (91 MB)", for "press Run to download …". */
-  downloadLabel(names) {
+  /** "Press Run to download yolov8s (45 MB)": what a screen shows instead of starting a download itself. */
+  pressToDownload(button, names) {
     const total = names.reduce((sum, n) => sum + (this.sizes[n] ?? 0), 0);
-    return `${names.join(" + ")}${total ? ` (${mb(total)} MB)` : ""}`;
+    return `Press ${button} to download ${names.join(" + ")}${total ? ` (${mb(total)} MB)` : ""}. It is kept in this browser for next time.`;
   },
 
   /** Loads `name` (and `extras` next to it), with download progress in the status box. */
