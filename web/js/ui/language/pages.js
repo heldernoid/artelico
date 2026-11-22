@@ -1,7 +1,8 @@
 // Language pages (Chat, Ask an image, Speech to text) and the "Ask the models" demos (UGen300 V2 Outfit
 // advisor, V3 Fridge chef, Calories, Face report, OfflineCode, WQ1 Meeting notes). Models from core/language.js.
 import { el, store, loadImage, imageFromFile } from "../common.js";
-import { Language, LANGUAGE_MODELS, modelsFor, Speech, WHISPER_MODELS, audioSamples, recordMicrophone } from "../../core/language.js";
+import { Language, LANGUAGE_MODELS, modelsFor, Speech, WHISPER_MODELS, audioSamples, recordMicrophone, languageName } from "../../core/language.js";
+import { SPEECH_SAMPLES } from "../credits.js";
 import { Nutrition, DailyLog, CodeBlocks, MeetingNotes } from "../../rules/language-games.js";
 
 // MARK: Shared parts
@@ -255,47 +256,84 @@ function whisperPicker() {
   return s;
 }
 
-/** Record / audio file / sample buttons; `onAudio(blob)`. */
-function audioControls(onAudio, status) {
-  let recording = null, since = 0, tick = null;
+/**
+ * The audio to work on: record, an audio (or video) file, or a sample; and a player for it.
+ * `onAudio(blob, sample)` runs for each new audio (sample: the SPEECH_SAMPLES entry, or null).
+ * Returns { controls, player, current() }. The player remembers whether it was muted.
+ */
+function audioInput(onAudio, status) {
+  let recording = null, since = 0, tick = null, current = null, url = null;
+  const audio = el("audio", { controls: true, preload: "auto", style: { width: "100%", display: "block" } });
+  try { audio.muted = store.get("audio.muted") === "1"; } catch { /* not kept */ }
+  audio.addEventListener("volumechange", () => store.set("audio.muted", audio.muted ? "1" : "0"));
+  const caption = el("p.small.muted", { style: { margin: "6px 2px 0" } });
+  const player = el("div.panel", { hidden: true, style: { padding: "10px 12px" } }, audio, caption);
+  const use = (blob, sample = null, label = "") => {
+    current = blob;
+    if (url) URL.revokeObjectURL(url);
+    url = URL.createObjectURL(blob);
+    audio.src = url;
+    caption.replaceChildren(...(sample
+      ? [el("b", {}, sample.title), " · ", sample.href ? el("a", { href: sample.href, target: "_blank", rel: "noopener" }, sample.credit) : sample.credit]
+      : [label]));
+    player.hidden = false;
+    if (sample || blob instanceof File) audio.play().catch(() => {});   // not a recording: the user just heard it
+    onAudio(blob, sample);
+  };
   const record = el("button.button.primary", { onclick: async () => {
-    if (recording) { clearInterval(tick); const blob = await recording.stop(); recording = null; record.textContent = "🎙 Record"; onAudio(blob); return; }
-    try { recording = await recordMicrophone(); since = Date.now(); record.textContent = "■ Stop"; tick = setInterval(() => { status.textContent = `Recording… ${Math.round((Date.now() - since) / 1000)} s`; }, 500); }
+    if (recording) { clearInterval(tick); const blob = await recording.stop(); recording = null; record.textContent = "🎙 Record"; use(blob, null, `Your recording (${Math.round((Date.now() - since) / 1000)} s)`); return; }
+    try { audio.pause(); recording = await recordMicrophone(); since = Date.now(); record.textContent = "■ Stop"; tick = setInterval(() => { status.textContent = `Recording… ${Math.round((Date.now() - since) / 1000)} s`; }, 500); }
     catch (error) { status.textContent = `Microphone: ${error.message}`; }
   } }, "🎙 Record");
-  const file = el("input", { type: "file", accept: "audio/*,video/*", hidden: true, onchange: () => { if (file.files[0]) onAudio(file.files[0]); } });
-  return el("span.toolbar", { style: { margin: 0 } }, record, el("button.button", { onclick: () => file.click() }, "Audio file…"), file,
-    el("button.button", { onclick: async () => onAudio(await (await fetch("samples/speech_sample.wav")).blob()) }, "Sample"));
+  const file = el("input", { type: "file", accept: "audio/*,video/*", hidden: true, onchange: () => { const f = file.files[0]; if (f) use(f, null, f.name); file.value = ""; } });
+  const samples = el("select", { "aria-label": "Speech samples", style: { maxWidth: "220px" }, onchange: async () => {
+    const sample = SPEECH_SAMPLES[Number(samples.value)];
+    samples.value = "";
+    if (!sample) return;
+    try { use(await (await fetch(`samples/${sample.file}`)).blob(), sample); } catch (error) { status.textContent = `Sample: ${error.message}`; }
+  } }, el("option", { value: "" }, "Samples…"), SPEECH_SAMPLES.map((x, i) => el("option", { value: i }, x.title)));
+  const controls = el("span.toolbar", { style: { margin: 0 } }, record, el("button.button", { onclick: () => file.click() }, "Audio file…"), file, samples);
+  return { controls, player, current: () => current };
 }
 
 export function speech(view) {
   header(view, "Speech to text", "Whisper turns speech into text in this browser. Nothing is uploaded.");
-  const model = whisperPicker(), language = el("input", { type: "text", placeholder: "Language, e.g. pt (empty: English)", style: { width: "170px" } });
+  const model = whisperPicker(), language = el("input", { type: "text", placeholder: "Language, e.g. pt (empty: detect)", style: { width: "190px" } });
   const translate = el("input", { type: "checkbox" }), status = progressLine(), box = answerBox("The text appears here.");
+  let working = false;
   const transcribe = async (blob) => {
+    if (!blob || working) return;
+    working = true; again.disabled = true;
     try {
       status.textContent = "Reading the audio…";
       const samples = await audioSamples(blob), started = performance.now();
       box.set("", true);
-      const text = await Speech.transcribe(samples, { model: model.value, language: language.value.trim() || null, translate: translate.checked, onProgress: (t) => { status.textContent = t; } });
+      let detected = null;
+      const text = await Speech.transcribe(samples, { model: model.value, language: language.value.trim().toLowerCase() || null, translate: translate.checked,
+        onProgress: (t) => { status.textContent = t; }, onLanguage: (code) => { detected = code; } });
       box.set(text || "(no speech found)");
-      status.textContent = `${(samples.length / 16000).toFixed(1)} s of audio in ${((performance.now() - started) / 1000).toFixed(1)} s`;
+      const said = detected ? `${languageName(detected)} (detected)` : languageName(language.value.trim().toLowerCase());
+      status.textContent = `${said} · ${(samples.length / 16000).toFixed(1)} s of audio in ${((performance.now() - started) / 1000).toFixed(1)} s`;
     } catch (error) { status.textContent = error.message ?? String(error); box.set(""); }
+    working = false; again.disabled = !input.current();
   };
-  view.append(el("div.toolbar", {}, audioControls(transcribe, status), model, language, el("label", {}, translate, " Translate to English")), status, box);
+  // A sample says its language; a file or a recording is detected unless a language is typed.
+  const input = audioInput((blob, sample) => { if (sample) language.value = sample.lang; transcribe(blob); }, status);
+  const again = el("button.button", { disabled: true, onclick: () => transcribe(input.current()) }, "Transcribe again");
+  view.append(el("div.toolbar", {}, input.controls, model, language, el("label", {}, translate, " Translate to English"), again), input.player, status, box);
 }
 
 export function meetingNotes(view) {
   header(view, "Meeting notes", "Record a meeting (or choose an audio file): Whisper writes it down, then a language model writes the notes.");
   const model = modelPicker("chat", "notes"), whisper = whisperPicker(), status = progressLine();
   const transcript = answerBox("Record a meeting or choose an audio file."), notes = answerBox("Key points, action items and decisions appear here.");
-  const process = async (blob) => {
+  const process = async (blob, sample) => {
     try {
       status.textContent = "Turning speech into text…";
       const samples = await audioSamples(blob);
       if (samples.length < 8000) throw new Error("The recording is too short.");
       transcript.set("", true);
-      const text = await Speech.transcribe(samples, { model: whisper.value, onProgress: (t) => { status.textContent = t; } });
+      const text = await Speech.transcribe(samples, { model: whisper.value, language: sample?.lang ?? null, onProgress: (t) => { status.textContent = t; } });
       if (!text) throw new Error("No speech was found in the recording.");
       transcript.set(text);
       for (let attempt = 1; attempt <= 2; attempt++) {
@@ -308,7 +346,8 @@ export function meetingNotes(view) {
       }
     } catch (error) { status.textContent = error.message ?? String(error); }
   };
-  view.append(webgpuNote(), el("div.toolbar", {}, audioControls(process, status), whisper, model), status,
+  const input = audioInput(process, status);
+  view.append(webgpuNote(), el("div.toolbar", {}, input.controls, whisper, model), input.player, status,
     twoColumns(el("div", {}, el("h2", {}, "Transcript"), transcript), el("div", {}, el("h2", {}, "Notes"), notes,
       el("p.small.muted", {}, "Nothing leaves this browser. Names and facts not said in the meeting are not invented (“Not mentioned”).")), 460));
 }

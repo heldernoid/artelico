@@ -112,6 +112,8 @@ Using a coding assistant (Claude Code or similar)? Point it at this folder. [CLA
 - **Sample pictures:** Hailo's hailo-apps (MIT) and the UGen300 demos (MIT), plus Google MediaPipe (Apache-2.0)
   for `thumbs_up.jpg`. Each app shows the credit next to the sample.
 - **Sample videos:** Hailo (MIT).
+- **Speech samples** (`web/samples/speech/`), all public domain: John F. Kennedy's inaugural address (US government),
+  and LibriVox readings of Machado de Assis, Cervantes, Jules Verne, Carlo Collodi and Franz Kafka (archive.org).
 - **Thanks to:**
   - the third-party loader protocol notes and the macOS HailoRT port that showed the way (see
     [docs/the-stick.md](docs/the-stick.md));

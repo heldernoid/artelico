@@ -61,6 +61,17 @@ and the language models are not available.
   - `ObjectTracker.track(result, time)` (`js/core/tracker.js`) steadies numbered boxes and body points per track
     number with One-Euro filters (`TrackSmoother`, `steadies`, on by default), which reaches every example screen
     that tracks (pose screens, Head count, Missing check...). Masks are not tracked or steadied.
+- Sound of video files (`VideoSound` in `js/ui/runner.js`): a second, hidden `<audio>` plays the same file in real
+  time and is moved back to the frame shown when they drift more than 0.25 s apart. The 🔊 / 🔇 button (remembered,
+  on by default) appears for video files and streams, and hides once the file is known to have no sound track
+  (`captureStream()` in Chrome, `audioTracks` in Safari, `mozHasAudio` in Firefox). Muted, it keeps playing silently,
+  so turning it on needs no seek. Streams and unpaced videos play their own sound.
+- Speech (`js/ui/language/pages.js`, `js/core/language.js`): Speech to text and Meeting notes show a player for the
+  audio used (sample, file or recording). The samples (`SPEECH_SAMPLES` in `js/ui/credits.js`, files in
+  `samples/speech/`) are 10–17 s cuts from public-domain recordings in six languages: John F. Kennedy's inaugural
+  address, and LibriVox readings of Machado de Assis, Cervantes, Verne, Collodi and Kafka. A sample sets the
+  language; with the language left empty it is detected (`Speech.detectLanguage`: one decoder step, the most likely
+  language token, about 0.1 s). Transformers.js would otherwise assume English and translate other speech.
 - `vendor/`: pinned copies of ONNX Runtime Web 1.30.0, WebLLM 0.2.87, Transformers.js 4.3.2.
 
 ## Checks

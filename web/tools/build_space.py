@@ -10,7 +10,7 @@ import os, re, shutil, sys
 WEB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(WEB, "..", "native", "hf", "space")
 LEAVE_OUT = {"js/ui/language", "js/core/language.js", "js/rules/language-games.js",
-             "vendor/web-llm-0.2.87", "vendor/transformers-4.3.2",
+             "vendor/web-llm-0.2.87", "vendor/transformers-4.3.2", "samples/speech",
              "data/tddfa_bfm68.bin"}   # Basel Face Model licence: not for a public site without the owner's OK
 
 README = """---

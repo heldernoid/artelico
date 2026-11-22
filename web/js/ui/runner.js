@@ -19,6 +19,62 @@ export async function listCameras() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Whether `media` (its metadata loaded) has a sound track: true, false, or null when the browser does not
+ * say. Firefox has mozHasAudio, Safari lists audioTracks, Chrome shows the tracks through captureStream().
+ */
+function hasSound(media) {
+  if (typeof media.mozHasAudio === "boolean") return media.mozHasAudio;
+  if (media.audioTracks) return media.audioTracks.length > 0;
+  try { if (media.captureStream) return media.captureStream().getAudioTracks().length > 0; } catch { /* not allowed */ }
+  return null;
+}
+
+/**
+ * The sound of a video file while its frames are shown one by one (PacedVideo): a second element plays the
+ * same file in real time and is moved back to the frame shown whenever they drift apart by more than a
+ * quarter of a second (the pacer keeps the frames in real time, so this is rare).
+ */
+class VideoSound {
+  constructor() {
+    this.media = el("audio", { preload: "auto", loop: true });
+    this.media.crossOrigin = "anonymous";
+    this.on = store.get("video.sound", "1") === "1";
+    this.present = null;   // whether the file has a sound track (null: not known yet)
+    this.blocked = false;  // the browser would not start the sound without a click
+  }
+
+  open(url) {
+    this.close();
+    this.present = null;
+    this.media.src = url;
+    this.media.addEventListener("loadedmetadata", () => { this.present = hasSound(this.media); this.onChange?.(); }, { once: true });
+    this.onChange?.();
+  }
+
+  close() { this.media.pause(); this.media.removeAttribute("src"); this.media.load(); }
+
+  /** Keeps the sound at `seconds` into the file, playing while `playing`. */
+  follow(seconds, playing) {
+    const m = this.media;
+    if (!m.src || !playing) { if (!m.paused) m.pause(); return; }
+    m.muted = !this.on;   // off, it plays on silently, so turning it on needs no seek
+    const duration = m.duration;
+    if (Number.isFinite(duration) && duration > 0) {
+      const target = seconds % duration;
+      let drift = Math.abs(m.currentTime - target);
+      drift = Math.min(drift, duration - drift);   // across the loop point
+      if (drift > 0.25) m.currentTime = target;
+    }
+    if (m.paused) {
+      const blocked = (value) => { if (this.blocked !== value) { this.blocked = value; this.onChange?.(); } };
+      m.play().then(() => blocked(false)).catch((e) => { if (e.name === "NotAllowedError") blocked(true); });
+    }
+  }
+
+  set(on) { this.on = on; store.set("video.sound", on ? "1" : "0"); this.media.muted = !on; }
+}
+
 /** The video's frame rate, from the times of a few frames while it plays (null when the browser cannot tell). */
 function measureFrameRate(video) {
   if (!video.requestVideoFrameCallback) return Promise.resolve(null);
@@ -60,6 +116,9 @@ class PacedVideo {
     await paced.seek(0);
     return paced;
   }
+
+  /** The time of the frame shown within the file, in seconds (loops back to 0 at the end). */
+  get fileTime() { return (this.index % this.frames) / this.frameRate; }
 
   /** The time of the frame shown, in seconds from the start of the run (continuous over loops). */
   get time() { return this.offset + this.index / this.frameRate; }
@@ -118,6 +177,7 @@ export class FrameRunner {
     this.video = el("video", { playsInline: true, muted: true, loop: true, autoplay: true });
     this.video.muted = true;
     this.paced = null;   // a PacedVideo while a video file is the source
+    this.sound = new VideoSound();   // the video file's sound, following the frames shown
   }
 
   /** The picture is mirrored for a camera facing the user (as a mirror), not for one facing away. */
@@ -173,7 +233,12 @@ export class FrameRunner {
         const opening = (this.opening = {});
         const paced = await PacedVideo.open(this.video, this.clock());
         if (this.opening === opening) this.paced = paced;   // not when another source was chosen meanwhile
-      } else await this.video.play();
+        if (this.paced) this.sound.open(url);
+        else this.video.muted = !this.sound.on;   // not paced: the video plays freely, with its own sound
+      } else {
+        this.video.muted = !this.sound.on;   // a stream plays freely, with its own sound
+        await this.video.play().catch(async (e) => { if (e.name !== "NotAllowedError") throw e; this.video.muted = true; await this.video.play(); });
+      }
     } else if (!this.picture) {
       throw new Error("Choose a photo first.");
     }
@@ -181,6 +246,8 @@ export class FrameRunner {
 
   closeSource() {
     this.paced = null;
+    this.sound.close();
+    this.video.muted = true;
     this.opening = null;
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
@@ -208,7 +275,7 @@ export class FrameRunner {
     let windowStart = performance.now(), windowFrames = 0;
     try {
       while (this.running) {
-        if (this.paused || !this.grab()) { this.paced?.restartClock(); await sleep(30); continue; }
+        if (this.paused || !this.grab()) { this.paced?.restartClock(); this.sound.follow(0, false); await sleep(30); continue; }
         // A video file: its own time, and the next frame is sought while this one is analysed.
         const paced = this.paced;
         const time = paced ? paced.time : this.clock();
@@ -227,6 +294,7 @@ export class FrameRunner {
         }
         await this.onFrame({ image: this.canvas, time, width: this.canvas.width, height: this.canvas.height, ...data });
         await moving;
+        if (paced && this.paced === paced) this.sound.follow(paced.fileTime, this.running && !this.paused);
         windowFrames++;
         const now = performance.now();
         if (now - windowStart >= 500) { this.fps = (windowFrames * 1000) / (now - windowStart); windowStart = now; windowFrames = 0; }
@@ -253,12 +321,28 @@ export class FrameRunner {
     const videoInput = el("input", { type: "file", accept: "video/*", hidden: true, onchange: () => { const f = videoInput.files[0]; if (f) { this.videoURL = URL.createObjectURL(f); this.sampleFile = null; refresh(); onChange(); } } });
     const photoInput = el("input", { type: "file", accept: "image/*", hidden: true, onchange: async () => { const f = photoInput.files[0]; if (f) { this.picture = await imageFromFile(f); this.sampleFile = null; refresh(); onChange(); } } });
     const extra = el("span");
+    // Sound of a video file or stream: on by default, remembered; hidden once the file is known to have none.
+    const soundButton = el("button.button", { onclick: () => {
+      this.sound.set(!this.sound.on || this.sound.blocked);
+      if (this.sound.on && this.paced) this.sound.follow(this.paced.fileTime, this.running && !this.paused);   // a click may start it
+      if (!this.paced && this.source !== "picture" && this.source !== "camera") this.video.muted = !this.sound.on;
+      showSound();
+    } });
+    const showSound = () => {
+      const blocked = this.sound.on && this.sound.blocked;
+      soundButton.textContent = blocked ? "🔇 Click for sound" : this.sound.on ? "🔊 Sound" : "🔇 Muted";
+      soundButton.title = this.sound.on ? "Turn the video's sound off" : "Play the video's sound";
+      soundButton.hidden = !(this.source === "video" || this.source === "stream") || this.sound.present === false;
+    };
+    this.sound.onChange = showSound;
     const refresh = () => {
       extra.replaceChildren();
       if (this.source === "video") extra.append(el("button.button", { onclick: () => videoInput.click() }, this.videoURL ? "Other video…" : "Choose a video…"));
       if (this.source === "picture") extra.append(el("button.button", { onclick: () => photoInput.click() }, this.picture ? "Other photo…" : "Choose a photo…"));
       if (this.source === "stream") extra.append(el("input", { type: "url", placeholder: "https://…/video.mp4 or .m3u8", value: this.streamURL, style: { width: "260px" }, oninput: (e) => { this.streamURL = e.target.value; } }));
       if (this.source === "camera") extra.append(cameraSelect);
+      if (this.source === "video" || this.source === "stream") extra.append(soundButton);
+      showSound();
       // The credit tag shows only while a bundled sample is the source.
       const sampleShown = (this.source === "picture" && this.sampleFile && !this.sampleFile.endsWith(".mp4"))
         || (this.source === "video" && this.sampleFile?.endsWith(".mp4"));
@@ -295,5 +379,7 @@ export class FrameRunner {
       this.source = "picture";
     }
     this.showSource?.();
+    // While running, switch to it at once (as a chosen file does); a picture is read on each frame anyway.
+    if (this.running && this.source !== "picture") await this.openSource().catch((e) => { this.message = e.message; this.running = false; });
   }
 }

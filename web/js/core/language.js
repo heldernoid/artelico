@@ -117,13 +117,42 @@ export const Speech = {
     return whisper;
   },
 
-  /** Mono 16 kHz samples -> text. `language` (e.g. "en", "pt") or null to detect; `translate` gives English. */
-  async transcribe(samples, { model = WHISPER_MODELS[0].id, language = null, translate = false, onProgress } = {}) {
+  /**
+   * Mono 16 kHz samples -> text. `language` (e.g. "en", "pt") or null to detect it; `translate` gives English.
+   * `onLanguage(code)` is told the language detected.
+   */
+  async transcribe(samples, { model = WHISPER_MODELS[0].id, language = null, translate = false, onProgress, onLanguage } = {}) {
     const asr = await this.load(model, onProgress);
-    const out = await asr(samples, { chunk_length_s: 30, stride_length_s: 5, language: language || undefined, task: translate ? "translate" : "transcribe", return_timestamps: false });
+    // Transformers.js does not detect the language: without one it assumes English, and other speech comes
+    // out translated (badly). So it is detected here first.
+    if (!language) { language = await this.detectLanguage(samples, model); onLanguage?.(language); }
+    const out = await asr(samples, { chunk_length_s: 30, stride_length_s: 5, language, task: translate ? "translate" : "transcribe", return_timestamps: false });
     return (Array.isArray(out) ? out.map((o) => o.text).join(" ") : out.text).trim();
   },
+
+  /**
+   * The spoken language of (the first 30 s of) `samples`, as Whisper's code ("en", "pt"…): one decoder step
+   * after <|startoftranscript|>, the most likely of the language tokens (as Whisper's own detect_language).
+   * About 0.1 s with whisper-base on WebGPU.
+   */
+  async detectLanguage(samples, model = WHISPER_MODELS[0].id) {
+    const asr = await this.load(model);
+    const config = asr.model.generation_config;
+    const { input_features } = await asr.processor(samples.subarray(0, 16000 * 30));
+    const start = new transformers.Tensor("int64", BigInt64Array.from([BigInt(config.decoder_start_token_id)]), [1, 1]);
+    const { logits } = await asr.model({ input_features, decoder_input_ids: start });
+    let best = "en", bestScore = -Infinity;
+    for (const [token, id] of Object.entries(config.lang_to_id)) {
+      if (logits.data[id] > bestScore) { bestScore = logits.data[id]; best = token.slice(2, -2); }
+    }
+    return best;
+  },
 };
+
+/** "pt" -> "Portuguese" (the browser's names; the code itself when it has none). */
+export function languageName(code) {
+  try { return new Intl.DisplayNames(["en"], { type: "language" }).of(code) ?? code; } catch { return code; }
+}
 
 /** Any audio file or recording (Blob) as mono 16 kHz float samples. */
 export async function audioSamples(blob) {

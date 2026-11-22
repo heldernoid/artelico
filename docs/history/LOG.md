@@ -3373,3 +3373,29 @@ Step 117's fix, ported to Artelico Web (and so the Space, through web/tools/buil
   `-section traffic -samplevideo tiling_visdrone_720p.mp4`, 12 s of stills of the app's own window
   (`screencapture -l <window>`, about 8 a second); 4 s kept, cropped to the video and the counts, 580 px wide,
   7 frames a second, 96 colours: 0.9 MB.
+
+## Step 124: sound in the web edition, and speech samples in six languages
+
+- **Video sound** (`web/js/ui/runner.js`, `VideoSound`): video files are shown frame by frame from a paused
+  `<video>`, so a second `<audio>` plays the same file in real time and is moved back to the frame shown when they
+  drift more than 0.25 s apart. 🔊 / 🔇 button for video files and streams (remembered, on by default), hidden once
+  the file is known to have no sound track. Chrome reports that through `captureStream().getAudioTracks()`
+  (`webkitAudioDecodedByteCount` would need playing first). Muted, it keeps playing silently.
+  - Checked in headless Chrome on Live: squats video, sound 0.15 s behind the frame analysed and following it;
+    toggling works; parcels video (no sound track) hides the button; lanes video (silent track) shows it.
+  - Fixed on the way: choosing a sample video while running only relabelled the source; it now switches to it
+    (`useSample` reopens the source, as a chosen file already did).
+- **Speech to text / Meeting notes**: a player for the audio used (sample, file, recording; remembers muting),
+  a Samples menu, "Transcribe again", the language shown with the result.
+  - Samples (`web/samples/speech/`, `SPEECH_SAMPLES` in `js/ui/credits.js`), 10–17 s, 48 kb/s mono MP3, 58–100 KB
+    each: Kennedy's inaugural address (whisper.cpp's jfk.wav, public domain), LibriVox (public domain, cut after the
+    LibriVox announcement): Machado de Assis (pt), Cervantes (es), Verne (fr), Collodi (it), Kafka (de). Cut points
+    from whisper-small timestamps and ffmpeg silencedetect.
+  - **Language detection**: Transformers.js does not detect the language; with none it assumed English and the
+    Portuguese sample came out as an English "translation" ("The hand is the horse of the horse's hammer…").
+    `Speech.detectLanguage` runs one decoder step after <|startoftranscript|> and takes the most likely of the 99
+    language tokens: all six samples right, about 120 ms each (whisper-base, WebGPU). The field now says
+    "empty: detect".
+  - whisper-base with the language: Italian, English word for word; Portuguese, Spanish, French, German close
+    (names misheard: "Krieger Samsa", "Estevan"). 0.4–1.4 s per clip after loading.
+- The Space leaves out `samples/speech` (no speech pages there).
