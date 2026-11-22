@@ -3470,3 +3470,7 @@ Step 117's fix, ported to Artelico Web (and so the Space, through web/tools/buil
 - Follow-up: Photos re-checks when the model or task changes (the message named the first model); demo screens
   (examples/kit.js) start on a chosen sample only if the models are here, else "Press Start to download … (N MB)".
   Headless: yolov9c → "Press Run to download yolov9c (101 MB)"; Squat alarm sample → "Press Start …", nothing downloaded.
+- Apps (both): a demo sample is a preview (first frame of a video) with "Press Start to run <model> on it" /
+  "…download <model>…"; a running demo still switches. Speech to text: a sample or file plays and waits for a new
+  Transcribe button (recording still transcribes on Stop). Mac: Squat alarm + squats video showed the preview, no
+  model loaded. iOS Release installed: Artelico on iPad + iPhone, Hailo Studio on iPad (not launched). DMGs not rebuilt.

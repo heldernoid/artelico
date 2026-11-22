@@ -94,7 +94,7 @@ struct SpeechView: View {
             try? FileManager.default.removeItem(at: copy)
             do { try FileManager.default.copyItem(at: url, to: copy) } catch { note = "\(error.localizedDescription)"; return }
             clip.use(copy, caption: url.lastPathComponent, play: true)
-            transcribe(copy) {}
+            note = "Press Transcribe to turn it into text."
         }
     }
 
@@ -128,7 +128,10 @@ struct SpeechView: View {
             .tint(recorder == nil ? .accentColor : .red)
             .disabled(working)
         Button("Open file") { choosingFile = true }.disabled(working || recorder != nil)
-        SpeechSampleMenu { transcribeSample($0) }.disabled(working || recorder != nil)
+        SpeechSampleMenu { useSample($0) }.disabled(working || recorder != nil)
+        // A sample or a file waits for this: choosing one only shows it in the player.
+        Button("Transcribe") { if let url = clip.url { transcribe(url) {} } }
+            .disabled(working || recorder != nil || clip.url == nil)
         if let recordingSince {
             TimelineView(.periodic(from: recordingSince, by: 0.5)) { context in
                 Label(String(format: "%.0f s", context.date.timeIntervalSince(recordingSince)), systemImage: "record.circle.fill").foregroundStyle(.red)
@@ -145,12 +148,18 @@ struct SpeechView: View {
             .textInputAutocapitalization(.never).autocorrectionDisabled()
     }
 
-    /// A spoken sample shipped with the app: it sets the language, plays, and is transcribed.
-    private func transcribeSample(_ sample: SpeechSample = SpeechSample.all[0]) {
+    /// A spoken sample shipped with the app: it sets the language and plays. Transcribe turns it into text, so
+    /// choosing a sample never loads or downloads a model. (`transcribeSample` does both, for `-autospeech`.)
+    private func useSample(_ sample: SpeechSample) {
         guard let url = sample.url else { return }
         language = sample.language
         clip.use(url, caption: sample.title, sample: sample, play: true)
-        transcribe(url) {}
+        note = "Press Transcribe to turn it into text."
+    }
+
+    private func transcribeSample(_ sample: SpeechSample = SpeechSample.all[0]) {
+        useSample(sample)
+        if let url = sample.url { transcribe(url) {} }
     }
 
     private func startRecording() {

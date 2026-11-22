@@ -529,12 +529,14 @@ struct PoseControls: View {
         #endif
     }
 
-    /// Shows a bundled sample photo, or plays a demo video (downloaded the first time), and runs the example
-    /// on it straight away.
+    /// Shows a bundled sample photo, or a demo video (downloaded the first time), as a preview. A running example
+    /// switches to it; a stopped one waits for Start, so choosing a sample never loads or downloads a model.
+    /// (Web counterpart: the Samples menu in web/js/ui/examples/kit.js.)
     private func useSample(_ file: String) {
-        if SampleMedia.isVideo(file) {
-            Task {
-                runner.stop()
+        Task {
+            let wasRunning = runner.running
+            if SampleMedia.isVideo(file) {
+                if wasRunning { runner.stop() }
                 while runner.running { try? await Task.sleep(for: .milliseconds(20)) }
                 runner.message = "Downloading the sample video…"
                 do {
@@ -543,25 +545,42 @@ struct PoseControls: View {
                     runner.source = .video
                     runner.videoURL = url
                     runner.sampleFile = file
-                    start()
+                    if wasRunning { start() } else { await preview(Self.firstFrame(url)) }
                 } catch {
                     runner.message = "\(error)"
                 }
+                return
             }
-            return
-        }
-        let parts = file.split(separator: ".")
-        guard parts.count == 2, let url = Bundle.main.url(forResource: String(parts[0]), withExtension: String(parts[1])),
-              let image = UIImage(contentsOfFile: url.path)?.uprightCGImage else { return }
-        runner.source = .picture
-        runner.picture = image
-        runner.sampleFile = file
-        Task {
+            let parts = file.split(separator: ".")
+            guard parts.count == 2, let url = Bundle.main.url(forResource: String(parts[0]), withExtension: String(parts[1])),
+                  let image = UIImage(contentsOfFile: url.path)?.uprightCGImage else { return }
+            runner.source = .picture
+            runner.picture = image
+            runner.sampleFile = file
+            guard wasRunning else { await preview(image); return }
             // A running example keeps the old picture: let it finish, then start again on the sample.
             runner.stop()
             while runner.running { try? await Task.sleep(for: .milliseconds(20)) }
             start()
         }
+    }
+
+    /// The first picture of a video, upright, for its preview.
+    private static func firstFrame(_ url: URL) async -> CGImage? {
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 1280, height: 1280)
+        return try? await generator.image(at: .zero).image
+    }
+
+    /// The sample shown before Start, with what Start will do.
+    private func preview(_ image: CGImage?) async {
+        runner.mirrored = false
+        runner.poses = []; runner.detections = []; runner.faces = []; runner.hands = []
+        runner.image = image
+        runner.message = studio.installed.contains(runner.modelName)
+            ? "Press Start to run \(runner.modelName) on it."
+            : "Press Start to download \(runner.modelName) and run it."
     }
 }
 
@@ -600,6 +619,13 @@ struct PoseStage<Overlay: View>: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottomLeading) {
             if runner.image != nil, let sample = runner.shownSample { CreditTag(file: sample) }
+        }
+        .overlay(alignment: .top) {
+            // A sample's preview: what Start will do.
+            if !runner.running, runner.image != nil, !runner.message.isEmpty {
+                Text(runner.message).font(.callout).padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(.regularMaterial, in: Capsule()).padding(10)
+            }
         }
     }
 }

@@ -70,6 +70,12 @@ Dependencies:
       StudioCore), shown when the chosen file has a sound track.
 - **`Samples/`:** pictures and a spoken sample, bundled. Credits are in `SampleMedia.swift`.
 
+## Samples never start work
+
+Choosing a sample (picture, video, speech) shows it: a preview with "Press Start…" in the demos, the player in
+Speech to text. Only Start, Run or Transcribe loads or downloads a model; a running demo switches to the sample.
+The web edition follows the same rule (web/CLAUDE.md).
+
 ## Launch arguments (Debug testing)
 
 Passed with `xcrun devicectl device process launch … --` on a device, or as the Mac app's arguments.
