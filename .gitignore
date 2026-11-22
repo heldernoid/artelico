@@ -12,9 +12,10 @@ __pycache__/
 *.log
 
 # Large or third-party files, fetched or built by the scripts (see README.md)
-images/*.ext4
-models/
-vendor/
+# (leading / = top-level folder only; web/vendor/ holds the web edition's libraries and must stay in git)
+/images/*.ext4
+/models/
+/vendor/
 native/src/
 native/coreml/
 native/web/
