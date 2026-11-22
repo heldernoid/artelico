@@ -3369,3 +3369,7 @@ Step 117's fix, ported to Artelico Web (and so the Space, through web/tools/buil
   once and is then `crossOriginIsolated`, with the service worker in control, WebGPU and 207 models from Hugging
   Face. Built from the public copy it is 106 MB (largest file 28 MB, under Pages' 100 MB per file).
 - Licence for the public repository confirmed: AGPL-3.0.
+- README demo: `docs/media/artelico-traffic.gif` (in `github/`), Artelico Debug for Mac Catalyst launched with
+  `-section traffic -samplevideo tiling_visdrone_720p.mp4`, 12 s of stills of the app's own window
+  (`screencapture -l <window>`, about 8 a second); 4 s kept, cropped to the video and the counts, 580 px wide,
+  7 frames a second, 96 colours: 0.9 MB.

@@ -3,6 +3,10 @@
 Apps for the **ASUS UGen300**, a USB AI accelerator with a **Hailo-10H** chip and 8 GB of its own memory, plus the
 same demos without the stick.
 
+![Artelico on a Mac counting cars crossing a line in Hailo's aerial traffic video, with YOLOv8s on Core ML](docs/media/artelico-traffic.gif)
+
+*Artelico on a Mac (no stick): the Traffic count demo, YOLOv8s on Core ML, counting cars as they cross the line. Video: Hailo, hailo-apps (MIT).*
+
 Hailo supports the stick on Linux and Windows only. This project drives it from a **Mac, an iPad or an iPhone**:
 - the USB protocol is reimplemented in a small C runtime;
 - iPadOS reaches the stick through a DriverKit driver.
