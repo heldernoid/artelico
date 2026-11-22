@@ -1,0 +1,28 @@
+#ifndef UGenDriver_h
+#define UGenDriver_h
+
+#include <Availability.h>
+#include <DriverKit/IOService.iig>
+
+class UGenDriver: public IOService
+{
+public:
+    virtual bool init() override;
+    virtual void free() override;
+    virtual kern_return_t Start(IOService * provider) override;
+    virtual kern_return_t Stop(IOService * provider) override;
+    virtual kern_return_t NewUserClient(uint32_t type, IOUserClient ** userClient) override;
+
+    void CopyInfo(void * out, uint32_t size) LOCALONLY;
+    // Selects configuration 1 again and opens interface `interfaceIndex`.
+    kern_return_t Reset(uint32_t interfaceIndex) LOCALONLY;
+    // Control transfer on endpoint 0. Direction comes from bit 7 of requestType.
+    kern_return_t ControlTransfer(uint8_t requestType, uint8_t request, uint16_t value, uint16_t index,
+                                  void * data, uint16_t length, uint16_t * transferred) LOCALONLY;
+    // One bulk OUT transfer. length 0 sends a zero-length packet.
+    kern_return_t BulkOut(uint8_t endpoint, const void * data, uint32_t length, uint32_t timeoutMs) LOCALONLY;
+    // One bulk IN transfer into the driver's buffer; *data stays valid until the next BulkIn.
+    kern_return_t BulkIn(uint8_t endpoint, uint32_t length, uint32_t timeoutMs, const void ** data, uint32_t * transferred) LOCALONLY;
+};
+
+#endif

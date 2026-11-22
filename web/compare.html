@@ -1,0 +1,59 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Artelico Web: WebGPU against WebAssembly</title>
+<pre id="out"></pre>
+<script type="module">
+// Runs every exported model on WebGPU and on WebAssembly with the same picture and compares the raw
+// outputs. Prints "RESULT {name, correlation, ...}" per model (read by web/tools/selftest.py).
+// ?from=0&count=50 limits the list.
+import * as ort from "./vendor/ort-1.30.0/ort.webgpu.min.mjs";
+ort.env.wasm.wasmPaths = new URL("./vendor/ort-1.30.0/", location.href).href;
+const say = (l) => { document.getElementById("out").textContent += l + "\n"; console.log(l); };
+const p = new URLSearchParams(location.search);
+const index = await (await fetch("models/index.json")).json();
+const names = p.get("names") ? p.get("names").split(",") : index.models.slice(Number(p.get("from") ?? 0), Number(p.get("from") ?? 0) + Number(p.get("count") ?? 1000));
+const img = await new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = "samples/bus.jpg"; });
+
+function picture(h, w) {
+  const c = new OffscreenCanvas(w, h), ctx = c.getContext("2d");
+  ctx.drawImage(img, 0, 0, w, h);
+  const rgba = ctx.getImageData(0, 0, w, h).data, rgb = new Uint8Array(w * h * 3);
+  for (let s = 0, d = 0; s < rgba.length; s += 4, d += 3) { rgb[d] = rgba[s]; rgb[d + 1] = rgba[s + 1]; rgb[d + 2] = rgba[s + 2]; }
+  return rgb;
+}
+
+for (const name of names) {
+  try {
+    const bytes = new Uint8Array(await (await fetch(`models/${name}.onnx`)).arrayBuffer());
+    const gpu = await ort.InferenceSession.create(bytes, { executionProviders: ["webgpu"], logSeverityLevel: 3 });
+    const cpu = await ort.InferenceSession.create(bytes, { executionProviders: ["wasm"], logSeverityLevel: 3 });
+    const feeds = {};
+    for (const n of cpu.inputNames) {
+      const meta = cpu.inputMetadata?.find?.((m) => m.name === n) ?? cpu.inputMetadata?.[n];
+      const shape = (meta?.shape ?? []).map((d) => (typeof d === "number" ? d : 1));
+      const type = meta?.type ?? "float32";
+      const size = shape.reduce((a, b) => a * b, 1);
+      if (type === "uint8" && shape.length === 4) feeds[n] = new ort.Tensor("uint8", picture(shape[1], shape[2]), shape);
+      else if (type.startsWith("int")) feeds[n] = new ort.Tensor(type, type === "int64" ? new BigInt64Array(size) : new Int32Array(size), shape);
+      else feeds[n] = new ort.Tensor("float32", new Float32Array(size).fill(0.1), shape);
+    }
+    const a = await gpu.run(feeds), b = await cpu.run(feeds);
+    let worst = 1, worstName = "";
+    for (const k of cpu.outputNames) {
+      const x = Float32Array.from(a[k].data, Number), y = Float32Array.from(b[k].data, Number);
+      let mx = 0, my = 0;
+      for (let i = 0; i < x.length; i++) { mx += x[i]; my += y[i]; }
+      mx /= x.length; my /= y.length;
+      let sxy = 0, sxx = 0, syy = 0;
+      for (let i = 0; i < x.length; i++) { const dx = x[i] - mx, dy = y[i] - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
+      const r = sxx === 0 && syy === 0 ? 1 : sxy / Math.sqrt(sxx * syy + 1e-30);
+      if (!(r >= worst)) { worst = r; worstName = k; }
+    }
+    gpu.release(); cpu.release();
+    say("RESULT " + JSON.stringify({ name, correlation: Number.isFinite(worst) ? Number(worst.toFixed(5)) : null, output: worstName }));
+  } catch (error) {
+    say("RESULT " + JSON.stringify({ name, error: String(error?.message ?? error).slice(0, 200) }));
+  }
+}
+say("DONE");
+</script>

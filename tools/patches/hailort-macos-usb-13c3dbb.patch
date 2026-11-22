@@ -1,0 +1,54 @@
+diff --git a/hailort/cmake/external/libusb.cmake b/hailort/cmake/external/libusb.cmake
+index 842b73e..711aece 100644
+--- a/hailort/cmake/external/libusb.cmake
++++ b/hailort/cmake/external/libusb.cmake
+@@ -1,5 +1,10 @@
+ cmake_minimum_required(VERSION 3.5.0)
+ 
+-# using pkgconfig because libusb does not provide a CMake configuration file
+-find_package(PkgConfig REQUIRED)
+-pkg_check_modules(LIBUSB REQUIRED IMPORTED_TARGET libusb-1.0)
++# Local change: no pkg-config needed; point straight at Homebrew's libusb (Apple Silicon path)
++# instead of using find_package(PkgConfig).
++if(NOT TARGET PkgConfig::LIBUSB)
++    add_library(PkgConfig::LIBUSB INTERFACE IMPORTED GLOBAL)
++    set_target_properties(PkgConfig::LIBUSB PROPERTIES
++        INTERFACE_INCLUDE_DIRECTORIES "/opt/homebrew/opt/libusb/include/libusb-1.0"
++        INTERFACE_LINK_LIBRARIES "/opt/homebrew/opt/libusb/lib/libusb-1.0.dylib")
++endif()
+diff --git a/hailort/common/file_utils.hpp b/hailort/common/file_utils.hpp
+index b83c613..04c69ea 100644
+--- a/hailort/common/file_utils.hpp
++++ b/hailort/common/file_utils.hpp
+@@ -13,6 +13,9 @@
+ #include "hailo/expected.hpp"
+ #include "hailo/buffer.hpp"
+ 
++#include <fstream>
++#include <string>
++
+ namespace hailort
+ {
+ 
+diff --git a/hailort/libhailort/bindings/python/src/CMakeLists.txt b/hailort/libhailort/bindings/python/src/CMakeLists.txt
+index f430110..dece965 100644
+--- a/hailort/libhailort/bindings/python/src/CMakeLists.txt
++++ b/hailort/libhailort/bindings/python/src/CMakeLists.txt
+@@ -31,7 +31,7 @@ set(HAILORT_VERSION_MAJOR 5)
+ set(HAILORT_VERSION_MINOR 3)
+ set(HAILORT_VERSION_REVISION 0)
+ 
+-if(UNIX)
++if(UNIX AND NOT APPLE)
+     # PYTHON_MODULE_EXTENSION does not take the CMAKE_SYSTEM_PROCESSOR into account so it needs to be added manually
+     string(REGEX REPLACE "\\." "" PYBIND11_PYTHON_VERSION_NO_DOT ${PYBIND11_PYTHON_VERSION})
+     set(PYTHON_MODULE_EXTENSION ".cpython-${PYBIND11_PYTHON_VERSION_NO_DOT}-${CMAKE_SYSTEM_PROCESSOR}-linux-gnu.so")
+@@ -116,7 +116,7 @@ if(WIN32)
+         /wd4201                     # Anonymous union/struct
+         /wd4251                     # C++ ABI with STL
+     )
+-elseif(NOT CMAKE_SYSTEM_NAME STREQUAL Android)
++elseif(NOT CMAKE_SYSTEM_NAME STREQUAL Android AND NOT APPLE)
+     # TODO: HRT-14770 fix android build
+     target_link_libraries(_pyhailort PRIVATE rt)
+ endif()

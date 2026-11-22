@@ -1,0 +1,1682 @@
+{
+ "all_minilm_l6_v2": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2",
+  "web": false
+ },
+ "arcface_mobilefacenet": {
+  "coreml": true,
+  "group": "non-commercial",
+  "licence": "Non-commercial research only (InsightFace models)",
+  "licenceFile": false,
+  "source": "https://github.com/deepinsight/insightface",
+  "web": true
+ },
+ "arcface_r50": {
+  "coreml": true,
+  "group": "non-commercial",
+  "licence": "Non-commercial research only (InsightFace models)",
+  "licenceFile": false,
+  "source": "https://github.com/deepinsight/insightface",
+  "web": true
+ },
+ "cas_vit_m": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/Tianfang-Zhang/CAS-ViT",
+  "web": true
+ },
+ "cas_vit_s": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/Tianfang-Zhang/CAS-ViT",
+  "web": true
+ },
+ "cas_vit_t": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/Tianfang-Zhang/CAS-ViT",
+  "web": true
+ },
+ "centernet_resnet_v1_18_postprocess": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://cv.gluon.ai/model_zoo/detection.html",
+  "web": true
+ },
+ "centernet_resnet_v1_50_postprocess": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://cv.gluon.ai/model_zoo/detection.html",
+  "web": true
+ },
+ "centerpose_regnetx_800mf": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/tensorboy/centerpose",
+  "web": true
+ },
+ "clip_resnet_50_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/openai/CLIP",
+  "web": true
+ },
+ "clip_resnet_50_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/timm/resnet50_clip.openai",
+  "web": true
+ },
+ "clip_resnet_50x4_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/openai/CLIP",
+  "web": true
+ },
+ "clip_resnet_50x4_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/timm/resnet50x4_clip.openai",
+  "web": true
+ },
+ "clip_vit_b_16_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/openai/CLIP",
+  "web": true
+ },
+ "clip_vit_b_16_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/openai/clip-vit-base-patch16",
+  "web": true
+ },
+ "clip_vit_b_32_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/openai/CLIP",
+  "web": true
+ },
+ "clip_vit_b_32_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/openai/clip-vit-base-patch32",
+  "web": true
+ },
+ "clip_vit_l_14_336_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/openai/clip-vit-large-patch14-336",
+  "web": true
+ },
+ "clip_vit_l_14_laion2B_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/laion/CLIP-ViT-L-14-laion2B-s32B-b82K",
+  "web": true
+ },
+ "clip_vit_l_14_laion2B_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/laion/CLIP-ViT-L-14-laion2B-s32B-b82K",
+  "web": true
+ },
+ "clip_vit_l_14_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/openai/clip-vit-large-patch14",
+  "web": true
+ },
+ "damoyolo_tinynasL20_T": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tinyvision/DAMO-YOLO",
+  "web": true
+ },
+ "damoyolo_tinynasL25_S": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tinyvision/DAMO-YOLO",
+  "web": true
+ },
+ "damoyolo_tinynasL35_M": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tinyvision/DAMO-YOLO",
+  "web": true
+ },
+ "davit_tiny": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/timm/davit_tiny.msft_in1k",
+  "web": true
+ },
+ "deeplab_v3_mobilenet_v2": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/bonlime/keras-deeplab-v3-plus",
+  "web": true
+ },
+ "deeplab_v3_mobilenet_v2_wo_dilation": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/models/tree/master/research/deeplab",
+  "web": true
+ },
+ "deit_base": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/facebookresearch/deit",
+  "web": true
+ },
+ "deit_small": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/facebookresearch/deit",
+  "web": true
+ },
+ "deit_tiny": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/facebookresearch/deit",
+  "web": true
+ },
+ "depth_anything_v2_vits": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf",
+  "web": true
+ },
+ "depth_anything_vits": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/LiheYoung/depth-anything-small-hf",
+  "web": true
+ },
+ "detr_resnet_v1_18_bn": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/facebookresearch/detr",
+  "web": true
+ },
+ "dncnn3": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/cszn/KAIR",
+  "web": true
+ },
+ "dncnn_color_blind": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/cszn/KAIR",
+  "web": true
+ },
+ "efficientdet_lite0": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/google/automl/tree/master/efficientdet",
+  "web": true
+ },
+ "efficientdet_lite1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/google/automl/tree/master/efficientdet",
+  "web": true
+ },
+ "efficientdet_lite2": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/google/automl/tree/master/efficientdet",
+  "web": true
+ },
+ "efficientformer_l1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/snap-research/EfficientFormer/tree/main",
+  "web": true
+ },
+ "efficientnet_l": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet",
+  "web": true
+ },
+ "efficientnet_lite0": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet",
+  "web": true
+ },
+ "efficientnet_lite1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet",
+  "web": true
+ },
+ "efficientnet_lite2": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet",
+  "web": true
+ },
+ "efficientnet_lite3": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet",
+  "web": true
+ },
+ "efficientnet_lite4": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet",
+  "web": true
+ },
+ "efficientnet_m": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet",
+  "web": true
+ },
+ "efficientnet_s": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/tpu/tree/master/models/official/efficientnet",
+  "web": true
+ },
+ "espcn_x2": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/Lornatang/ESPCN-PyTorch",
+  "web": true
+ },
+ "espcn_x3": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/Lornatang/ESPCN-PyTorch",
+  "web": true
+ },
+ "espcn_x4": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/Lornatang/ESPCN-PyTorch",
+  "web": true
+ },
+ "face_attr_resnet_v1_18": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/d-li14/face-attribute-prediction",
+  "web": true
+ },
+ "face_landmarks_lite": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/google-ai-edge/mediapipe",
+  "web": true
+ },
+ "fast_depth": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/dwofk/fast-depth",
+  "web": true
+ },
+ "fast_sam_s": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/CASIA-IVA-Lab/FastSAM",
+  "web": true
+ },
+ "fastvit_sa12": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apple-Sample-Code (permissive, keep notice)",
+  "licenceFile": false,
+  "source": "https://github.com/apple/ml-fastvit/tree/main",
+  "web": true
+ },
+ "fcn8_resnet_v1_18": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://mmsegmentation.readthedocs.io/en/latest",
+  "web": true
+ },
+ "hand_landmark_lite": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/google/mediapipe",
+  "web": true
+ },
+ "hardnet39ds": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/PingoLH/Pytorch-HarDNet",
+  "web": true
+ },
+ "hardnet68": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/PingoLH/Pytorch-HarDNet",
+  "web": true
+ },
+ "inception_v1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/models/tree/v1.13.0/research/slim",
+  "web": true
+ },
+ "levit128": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/facebookresearch/LeViT",
+  "web": true
+ },
+ "levit192": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/facebookresearch/LeViT",
+  "web": true
+ },
+ "levit256": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/facebookresearch/LeViT",
+  "web": true
+ },
+ "levit384": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/facebookresearch/LeViT",
+  "web": true
+ },
+ "lightface_slim": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/Linzaer/Ultra-Light-Fast-Generic-Face-Detector-1MB",
+  "web": true
+ },
+ "mobilenet_v1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/models/tree/v1.13.0/research/slim",
+  "web": true
+ },
+ "mobilenet_v2_1.0": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/models/tree/v1.13.0/research/slim",
+  "web": true
+ },
+ "mobilenet_v2_1.4": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/models/tree/v1.13.0/research/slim",
+  "web": true
+ },
+ "mobilenet_v3": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/models/tree/master/research/slim/nets/mobilenet",
+  "web": true
+ },
+ "mspn_regnetx_800mf": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/open-mmlab/mmpose",
+  "web": true
+ },
+ "nanodet_repvgg": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/RangiLyu/nanodet",
+  "web": true
+ },
+ "nanodet_repvgg_a12": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/Megvii-BaseDetection/YOLOX",
+  "web": true
+ },
+ "nanodet_repvgg_a1_640": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/RangiLyu/nanodet",
+  "web": true
+ },
+ "nextvit_base": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/bytedance/Next-ViT",
+  "web": true
+ },
+ "nextvit_small": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/bytedance/Next-ViT",
+  "web": true
+ },
+ "ocr": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/PaddlePaddle/PaddleOCR",
+  "web": true
+ },
+ "ocr_det": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/PaddlePaddle/PaddleOCR",
+  "web": true
+ },
+ "osnet_x1_0": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/KaiyangZhou/deep-person-reid",
+  "web": true
+ },
+ "person_attr_resnet_v1_18": {
+  "coreml": true,
+  "group": "no licence",
+  "licence": "None (all rights reserved)",
+  "licenceFile": false,
+  "source": "https://github.com/dangweili/pedestrian-attribute-recognition-pytorch",
+  "web": true
+ },
+ "poolformer_s12": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/sail-sg/poolformer",
+  "web": true
+ },
+ "r3d_18": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "BSD-3-Clause",
+  "licenceFile": false,
+  "source": "https://pytorch.org/vision/stable/models.html#video-classification",
+  "web": true
+ },
+ "real_esrgan_x2": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "BSD-3-Clause",
+  "licenceFile": false,
+  "source": "https://github.com/ai-forever/Real-ESRGAN",
+  "web": true
+ },
+ "regnetx_1.6gf": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/facebookresearch/pycls",
+  "web": true
+ },
+ "regnetx_800mf": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/facebookresearch/pycls",
+  "web": true
+ },
+ "repghost_1_0x": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/ChengpengChen/RepGhost",
+  "web": true
+ },
+ "repghost_2_0x": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/ChengpengChen/RepGhost",
+  "web": true
+ },
+ "repvgg_a0_person_reid_512": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/DingXiaoH/RepVGG",
+  "web": true
+ },
+ "repvgg_a1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/DingXiaoH/RepVGG",
+  "web": true
+ },
+ "repvgg_a2": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/DingXiaoH/RepVGG",
+  "web": true
+ },
+ "resmlp12_relu": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/rwightman/pytorch-image-models/",
+  "web": true
+ },
+ "resnet_v1_18": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/yhhhli/BRECQ",
+  "web": true
+ },
+ "resnet_v1_34": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/models/tree/master/research/slim",
+  "web": true
+ },
+ "resnet_v1_50": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/models/tree/master/research/slim",
+  "web": true
+ },
+ "resnext26_32x4d": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/osmr/imgclsmob/tree/master/pytorch",
+  "web": true
+ },
+ "resnext50_32x4d": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/osmr/imgclsmob/tree/master/pytorch",
+  "web": true
+ },
+ "retinaface_mobilenet_v1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/biubug6/Pytorch_Retinaface",
+  "web": true
+ },
+ "scdepthv3": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "GPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/JiawangBian/sc_depth_pl/",
+  "web": true
+ },
+ "scrfd_10g": {
+  "coreml": true,
+  "group": "non-commercial",
+  "licence": "Non-commercial research only (InsightFace models)",
+  "licenceFile": false,
+  "source": "https://github.com/deepinsight/insightface",
+  "web": true
+ },
+ "scrfd_2.5g": {
+  "coreml": true,
+  "group": "non-commercial",
+  "licence": "Non-commercial research only (InsightFace models)",
+  "licenceFile": false,
+  "source": "https://github.com/deepinsight/insightface",
+  "web": true
+ },
+ "scrfd_500m": {
+  "coreml": true,
+  "group": "non-commercial",
+  "licence": "Non-commercial research only (InsightFace models)",
+  "licenceFile": false,
+  "source": "https://github.com/deepinsight/insightface",
+  "web": true
+ },
+ "segformer_b0_bn": {
+  "coreml": true,
+  "group": "non-commercial",
+  "licence": "NVIDIA-Source-Code (non-commercial)",
+  "licenceFile": false,
+  "source": "https://github.com/NVlabs/SegFormer",
+  "web": true
+ },
+ "siglip2_b_16_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/google/siglip2-base-patch16-224",
+  "web": true
+ },
+ "siglip2_b_32_256_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/google/siglip2-base-patch32-256",
+  "web": true
+ },
+ "siglip2_b_32_256_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/google/siglip2-base-patch32-256",
+  "web": true
+ },
+ "siglip_b_16_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/google/siglip-base-patch16-224",
+  "web": true
+ },
+ "siglip_b_16_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/google/siglip-base-patch16-224",
+  "web": true
+ },
+ "siglip_l_16_256_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/google/siglip-large-patch16-256",
+  "web": true
+ },
+ "siglip_l_16_256_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/google/siglip-large-patch16-256",
+  "web": true
+ },
+ "squeezenet_v1.1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/osmr/imgclsmob/tree/master/pytorch",
+  "web": true
+ },
+ "ssd_mobilenet_v1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md",
+  "web": true
+ },
+ "ssd_mobilenet_v2": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md",
+  "web": true
+ },
+ "stdc1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://mmsegmentation.readthedocs.io/en/latest",
+  "web": true
+ },
+ "stereonet": {
+  "coreml": true,
+  "group": "no licence",
+  "licence": "None (all rights reserved)",
+  "licenceFile": false,
+  "source": "https://github.com/nivosco/StereoNet",
+  "web": true
+ },
+ "swin_small": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/microsoft/swin-small-patch4-window7-224",
+  "web": true
+ },
+ "swin_tiny": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://huggingface.co/microsoft/swin-tiny-patch4-window7-224",
+  "web": true
+ },
+ "tddfa_mobilenet_v1": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/cleardusk/3DDFA_V2",
+  "web": true
+ },
+ "tiny_yolov3": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/Tianxiaomo/pytorch-YOLOv4",
+  "web": true
+ },
+ "tiny_yolov4": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/Tianxiaomo/pytorch-YOLOv4",
+  "web": true
+ },
+ "tinyclip_vit_39m_16_text_19m_yfcc15m_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/wkcn/TinyCLIP-ViT-39M-16-Text-19M-YFCC15M",
+  "web": true
+ },
+ "tinyclip_vit_39m_16_text_19m_yfcc15m_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/wkcn/TinyCLIP-ViT-39M-16-Text-19M-YFCC15M",
+  "web": true
+ },
+ "tinyclip_vit_40m_32_text_19m_laion400m_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/wkcn/TinyCLIP-ViT-40M-32-Text-19M-LAION400M",
+  "web": true
+ },
+ "tinyclip_vit_40m_32_text_19m_laion400m_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/wkcn/TinyCLIP-ViT-40M-32-Text-19M-LAION400M",
+  "web": true
+ },
+ "tinyclip_vit_61m_32_text_29m_laion400m_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/wkcn/TinyCLIP-ViT-61M-32-Text-29M-LAION400M",
+  "web": true
+ },
+ "tinyclip_vit_61m_32_text_29m_laion400m_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/wkcn/TinyCLIP-ViT-61M-32-Text-29M-LAION400M",
+  "web": true
+ },
+ "tinyclip_vit_8m_16_text_3m_yfcc15m_image_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M",
+  "web": true
+ },
+ "tinyclip_vit_8m_16_text_3m_yfcc15m_text_encoder": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://huggingface.co/wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M",
+  "web": true
+ },
+ "ufld_v2_tu": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/cfzd/Ultra-Fast-Lane-Detection-v2",
+  "web": true
+ },
+ "unet_mobilenet_v2": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://www.tensorflow.org/tutorials/images/segmentation",
+  "web": true
+ },
+ "vit_base": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/rwightman/pytorch-image-models",
+  "web": true
+ },
+ "vit_base_bn": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/rwightman/pytorch-image-models",
+  "web": true
+ },
+ "vit_large": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "github.com/google-research/vision_transformer",
+  "web": true
+ },
+ "vit_pose_small": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/ViTAE-Transformer/ViTPose",
+  "web": true
+ },
+ "vit_pose_small_bn": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/ViTAE-Transformer/ViTPose",
+  "web": true
+ },
+ "vit_small": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/rwightman/pytorch-image-models",
+  "web": true
+ },
+ "vit_small_bn": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/rwightman/pytorch-image-models",
+  "web": true
+ },
+ "vit_tiny": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/rwightman/pytorch-image-models",
+  "web": true
+ },
+ "vit_tiny_bn": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/rwightman/pytorch-image-models",
+  "web": true
+ },
+ "yolact_regnetx_1.6gf": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/dbolya/yolact",
+  "web": true
+ },
+ "yolact_regnetx_800mf": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT",
+  "licenceFile": false,
+  "source": "https://github.com/dbolya/yolact",
+  "web": true
+ },
+ "yolo11s_obb": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo26l_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo26m": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo26m_pose": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo26m_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo26n": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo26n_pose": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo26n_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo26s": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo26s_pose": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo26s_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolo_world_v2s": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "GPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/AILab-CVC/YOLO-World",
+  "web": false
+ },
+ "yolov10b": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/THU-MIG/yolov10",
+  "web": true
+ },
+ "yolov10n": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/THU-MIG/yolov10",
+  "web": true
+ },
+ "yolov10s": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/THU-MIG/yolov10",
+  "web": true
+ },
+ "yolov10x": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/THU-MIG/yolov10",
+  "web": true
+ },
+ "yolov11l": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov11m": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov11m_obb": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov11n": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov11n_obb": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov11s": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov11x": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov11x_obb": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov12n": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/sunsmarterjie/yolov12",
+  "web": true
+ },
+ "yolov3": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Public domain (YOLO licence)",
+  "licenceFile": false,
+  "source": "https://github.com/AlexeyAB/darknet",
+  "web": true
+ },
+ "yolov3_416": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Public domain (YOLO licence)",
+  "licenceFile": false,
+  "source": "https://github.com/AlexeyAB/darknet",
+  "web": true
+ },
+ "yolov3_gluon": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://cv.gluon.ai/model_zoo/detection.html",
+  "web": true
+ },
+ "yolov3_gluon_416": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://cv.gluon.ai/model_zoo/detection.html",
+  "web": true
+ },
+ "yolov4_leaky": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Public domain (YOLO licence)",
+  "licenceFile": false,
+  "source": "https://github.com/AlexeyAB/darknet/wiki/YOLOv4-model-zoo",
+  "web": true
+ },
+ "yolov5l_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5",
+  "web": true
+ },
+ "yolov5m": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5/releases/tag/v2.0",
+  "web": true
+ },
+ "yolov5m6_6.1": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5/releases/tag/v6.1",
+  "web": true
+ },
+ "yolov5m_6.1": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5/releases/tag/v6.1",
+  "web": true
+ },
+ "yolov5m_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5",
+  "web": true
+ },
+ "yolov5m_seg_hpp": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5",
+  "web": true
+ },
+ "yolov5m_wo_spp": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5/releases/tag/v2.0",
+  "web": true
+ },
+ "yolov5n_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5",
+  "web": true
+ },
+ "yolov5n_seg_hpp": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5",
+  "web": true
+ },
+ "yolov5s": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5/releases/tag/v2.0",
+  "web": true
+ },
+ "yolov5s_bbox_decoding_only": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/yolov5/releases/tag/v2.0",
+  "web": true
+ },
+ "yolov5s_c3tr": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/yolov5/tree/v6.0",
+  "web": true
+ },
+ "yolov5s_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5",
+  "web": true
+ },
+ "yolov5s_seg_hpp": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5",
+  "web": true
+ },
+ "yolov5s_wo_spp": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5/releases/tag/v2.0",
+  "web": true
+ },
+ "yolov5xs_wo_spp": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/yolov5/releases/tag/v2.0",
+  "web": true
+ },
+ "yolov6n": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "GPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/meituan/YOLOv6/releases/tag/0.1.0",
+  "web": true
+ },
+ "yolov6n_0.2.1": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "GPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/meituan/YOLOv6/releases/tag/0.2.1",
+  "web": true
+ },
+ "yolov6n_0.2.1_nms_core": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "GPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/meituan/YOLOv6/releases/tag/0.2.1",
+  "web": true
+ },
+ "yolov7": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "GPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/WongKinYiu/yolov7",
+  "web": true
+ },
+ "yolov7_tiny": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "GPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/WongKinYiu/yolov7",
+  "web": true
+ },
+ "yolov7e6": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "GPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/WongKinYiu/yolov7",
+  "web": true
+ },
+ "yolov7x": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "GPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/WongKinYiu/yolov7",
+  "web": true
+ },
+ "yolov8l": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov8m": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov8m_pose": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov8m_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov8n": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov8n_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov8s": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov8s_bbox_decoding_only": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov8s_pose": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov8s_seg": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": true,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov8x": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "AGPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/ultralytics/ultralytics",
+  "web": true
+ },
+ "yolov9c": {
+  "coreml": true,
+  "group": "copyleft",
+  "licence": "GPL-3.0",
+  "licenceFile": false,
+  "source": "https://github.com/WongKinYiu/yolov9",
+  "web": true
+ },
+ "yolox_l_leaky": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/Megvii-BaseDetection/YOLOX",
+  "web": true
+ },
+ "yolox_s_leaky": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/Megvii-BaseDetection/YOLOX",
+  "web": true
+ },
+ "yolox_s_wide_leaky": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/Megvii-BaseDetection/YOLOX",
+  "web": true
+ },
+ "yolox_tiny": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "Apache-2.0",
+  "licenceFile": false,
+  "source": "https://github.com/Megvii-BaseDetection/YOLOX",
+  "web": true
+ },
+ "zero_dce": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT (Hailo Model Zoo)",
+  "licenceFile": false,
+  "source": "Internal",
+  "web": true
+ },
+ "zero_dce_pp": {
+  "coreml": true,
+  "group": "permissive",
+  "licence": "MIT (Hailo Model Zoo)",
+  "licenceFile": false,
+  "source": "Internal",
+  "web": true
+ }
+}

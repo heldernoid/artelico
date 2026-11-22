@@ -1,0 +1,35 @@
+# Built and generated
+*.xcodeproj/
+build*/
+.build*/
+.swiftpm/
+DerivedData/
+dist/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+*.log
+
+# Large or third-party files, fetched or built by the scripts (see README.md)
+images/*.ext4
+models/
+vendor/
+native/src/
+native/coreml/
+native/web/
+native/hf/stage/
+native/hf/space/
+web/models
+web/samples/videos/
+testdata/configs/*.npy
+.venv*/
+
+# Not distributable (Basel Face Model licence): made by native/tools/make_tddfa_bfm68.py
+tddfa_bfm68.bin
+
+# Local secrets
+.env
+*.token
+web/_site/
+_site/

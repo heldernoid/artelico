@@ -1,0 +1,115 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Artelico Web self-test</title>
+<pre id="out"></pre>
+<script type="module">
+// Runs models on sample pictures and prints one "RESULT {json}" line per check (read from the Mac by
+// web/tools/selftest.py through headless Chrome). ?checks=detection:yolov8m,pose:yolov8m_pose
+import { loadCatalog, Catalog } from "./js/core/catalog.js";
+import { OnnxEngine, backend, settings } from "./js/core/engine.js";
+import { defaultSource } from "./js/core/source.js";
+import * as P from "./js/core/pipeline.js";
+import { tokenizer, PAIRS } from "./js/core/clip.js";
+
+const out = document.getElementById("out");
+const say = (line) => { out.textContent += line + "\n"; console.log(line); };
+const params = new URLSearchParams(location.search);
+let checks = (params.get("checks") ?? "detection:yolov8m@bus.jpg").split(",");
+const PICTURES = { classification: "apple.jpg", super_resolution: "input_image.png", depth: "bus.jpg", semantic_segmentation: "bus.jpg",
+  oriented_detection: "dota_image.png", lane_detection: "lane.png", ocr: "ocr_img1.png" };
+if (params.get("checks") === "all") {
+  // Every exported model, for every task it can be decoded for.
+  await loadCatalog();
+  const index = await (await fetch("models/index.json")).json();
+  const from = Number(params.get("from") ?? 0), count = Number(params.get("count") ?? 1000);
+  checks = [];
+  for (const name of index.models.slice(from, from + count)) {
+    const m = Catalog.model(name);
+    if (!m) continue;
+    for (const task of Object.keys(P.TASKS)) if (P.supports(task, m)) checks.push(`${task}:${name}@${PICTURES[task] ?? "bus.jpg"}`);
+  }
+}
+// ?tokens: the three tokenizers of tagging from text against Hugging Face's ids (serve.py serves /testdata/).
+if (params.has("tokens")) {
+  const reference = await (await fetch("testdata/configs/clip_reference_tokens.json")).json();
+  for (const family of ["clip", "siglip", "siglip2"]) {
+    const t = await tokenizer(family);
+    const wrong = reference.tests.filter((text, i) => JSON.stringify(family === "clip" ? t.encode(text) : t.encode(text, 64)) !== JSON.stringify(reference[family][i]));
+    say("RESULT " + JSON.stringify({ check: `tokens:${family}`, phrases: reference.tests.length, mismatches: wrong.length, first: wrong.slice(0, 5) }));
+  }
+  say("DONE");
+  throw new Error("done");
+}
+// Tagging from text: ?checks=clip:<image encoder>@bus.jpg (or clip:all@bus.jpg+dog_bicycle.jpg+apple.jpg) and &prompts=a,b,c.
+const PROMPTS = params.get("prompts") ?? "bus,dog,bicycle,apple,person,cat,car,living room,keyboard,spinner,Raspberry Pi,unicorn mouse pad,wooden desk";
+checks = checks.flatMap((c) => {
+  const [task, rest] = c.split(":");
+  if (task !== "clip") return [c];
+  const [name, pictures = "bus.jpg"] = rest.split("@");
+  return (name === "all" ? PAIRS.map((p) => p.image) : [name]).flatMap((n) => pictures.split(/[+ ]/).map((f) => `clip:${n}@${f}`));
+});
+const image = (name) => new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = `samples/${name}`; });
+
+try {
+  await loadCatalog();
+  const source = await defaultSource();   // models/ when present, else Hugging Face (?models=hf forces it)
+  settings.wasmOnly = new Set(await source.wasmOnly());
+  const engine = new OnnxEngine(source);
+  say(`INFO webgpu=${!!navigator.gpu} isolated=${self.crossOriginIsolated}`);
+  for (const check of checks) {
+    const [task, rest] = check.split(":");
+    const [name, picture = "bus.jpg"] = rest.split("@");
+    const model = Catalog.model(name);
+    try {
+      let t = performance.now();
+      engine.unloadAll();
+      await engine.load(model);
+      for (const c of P.companionsFor(task, model)) await engine.load(Catalog.model(c), { primary: false });
+      const loadMs = performance.now() - t;
+      const img = await image(picture);
+      const options = task === "clip" ? { prompts: PROMPTS } : {};
+      t = performance.now();
+      await P.run(task, img, engine, options);           // warm-up (shader compilation; tagging: the prompts too)
+      const firstMs = performance.now() - t;
+      const runs = [];
+      let last;
+      for (let i = 0; i < (params.get("checks") === "all" ? 1 : 3); i++) { last = await P.run(task, img, engine, options); runs.push(last.timing.inference); }
+      const r = last.result;
+      let summary;
+      switch (r.kind) {
+        case "detections": summary = r.value.filter((d) => d.confidence >= 0.4).map((d) => `${d.label} ${d.confidence.toFixed(2)}`); break;
+        case "poses": summary = r.value.map((p) => `person ${p.confidence.toFixed(2)} nose ${p.keypoints[0].position.x.toFixed(3)},${p.keypoints[0].position.y.toFixed(3)}`); break;
+        case "faces": summary = r.value.map((f) => `face ${f.confidence.toFixed(2)} at ${f.boundingBox.x.toFixed(3)},${f.boundingBox.y.toFixed(3)}`); break;
+        case "classifications": summary = task === "clip" ? Object.fromEntries(r.value.map((c) => [c.label, [Number(c.probability.toFixed(4)), Number(c.similarity.toFixed(4))]]))
+          : r.value.map((c) => `${c.label} ${(c.probability * 100).toFixed(1)}%`); break;
+        case "depth": { const v = r.value.values; let lo = Infinity, hi = -Infinity; for (const x of v) { lo = Math.min(lo, x); hi = Math.max(hi, x); } summary = `depth ${r.value.width}x${r.value.height} ${lo.toFixed(2)}..${hi.toFixed(2)}`; break; }
+        case "segmentation": { const n = new Set(r.value.classes).size; summary = `segmentation ${r.value.width}x${r.value.height}, ${n} classes`; break; }
+        case "image": summary = r.value ? `image ${r.value.width}x${r.value.height}` : "no image"; break;
+        case "instances": summary = r.value.map((i) => `${i.detection.label} ${i.detection.confidence.toFixed(2)} mask ${i.mask.reduce((a, b) => a + (b ? 1 : 0), 0)}px`); break;
+        case "oriented": summary = r.value.slice(0, 8).map((d) => `${d.label} ${d.confidence.toFixed(2)}`); break;
+        case "lanes": summary = r.value.map((l) => `${l.points.length} points from ${l.points[0].x.toFixed(2)},${l.points[0].y.toFixed(2)}`); break;
+        case "text": summary = r.value.map((t) => t.text || "(unreadable)"); break;
+        case "described": summary = r.value.map((d) => `${d.name ?? d.confidence.toFixed(2)}: ${d.attributes.slice(0, 3).map((a) => `${a.label} ${a.probability.toFixed(2)}`).join(", ")}`); break;
+        case "faceLandmarks": summary = r.value.map((f) => `${f.points.length} points` + (f.headPose ? ` yaw ${f.headPose.yaw.toFixed(0)}` : ` ${f.confidence.toFixed(2)}`)); break;
+        default: summary = r.kind;
+      }
+      // &dump: the embeddings too (comparing with the Python reference).
+      if (task === "clip" && params.has("dump")) {
+        const { textEncoder, pairForImage, parsePrompts } = await import("./js/core/clip.js");
+        const { prepareSmooth } = await import("./js/core/prep.js");
+        const pair = pairForImage(name), enc = textEncoder(pair, source);
+        const texts = []; for (const p of parsePrompts(PROMPTS)) texts.push(Array.from(await enc.embed(p.text, engine)));
+        const frame = prepareSmooth(img, model.inputs[0].width, model.inputs[0].height);
+        const [out] = await engine.infer([frame.rgb], name);
+        say("DUMP " + JSON.stringify({ check, texts, image: Array.from(out.values), rgb: Array.from(frame.rgb.slice(0, 3000)) }));
+      }
+      say("RESULT " + JSON.stringify({ check, backend: backend.name, loadMs: Math.round(loadMs), firstMs: Math.round(firstMs), inferenceMs: Math.round(Math.min(...runs)), summary }));
+    } catch (error) {
+      say("RESULT " + JSON.stringify({ check, error: String(error?.message ?? error) }));
+    }
+  }
+} catch (error) {
+  say("RESULT " + JSON.stringify({ error: String(error?.message ?? error) }));
+}
+say("DONE");
+</script>

@@ -1,0 +1,993 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Artelico Web rules test</title>
+<pre id="out"></pre>
+<script type="module">
+// Port of the Swift XCTest cases for the demo rules (UGenKit/Tests/UGenKitTests). One "RESULT {json}" line
+// per test (read by web/tools/selftest.py), then "DONE".
+import { K, BodyPose, raisedHands, GestureController, HandRaiseCounter, AirInstrument, YOGA, YogaCoach, YogaRound, SquatCounter,
+  Attention, AttentionPerson } from "./js/rules/pose-games.js";
+import { boxIoU, CentroidTracker, LineCounter, MissingCheck, PlateText, GateBarrier, confidentMatch, CheckInBook } from "./js/rules/detection-games.js";
+import { HandCrop, HandSigns, SignSmoother, segmentHitsCircle, FruitGame, AirBand } from "./js/rules/hand-games.js";
+import { brightenStrength, restore, blend } from "./js/rules/photo-restore.js";
+import { Nutrition, DailyLog, CodeBlocks, MeetingNotes, withoutThinking } from "./js/rules/language-games.js";
+import { ObjectTracker, assign } from "./js/core/tracker.js";
+import { FaceGallery, averageEmbedding } from "./js/core/pipelines.js";
+import { RegionHold, PrivacyScan, PrivacyFilter, region } from "./js/rules/privacy.js";
+import { FramePacer, TrackSmoother } from "./js/rules/steady-video.js";
+
+const out = document.getElementById("out");
+const say = (line) => { out.textContent += line + "\n"; console.log(line); };
+
+// Tiny assert helper: failures collect in `fails`.
+let fails = [];
+const show = (v) => JSON.stringify(v, (_, x) => (x instanceof Map ? Object.fromEntries(x) : x instanceof Set ? [...x] : x === undefined ? null : x));
+const eq = (a, b, msg = "") => { if (show(a) !== show(b)) fails.push(`${msg} got ${show(a)} want ${show(b)}`); };
+const close = (a, b, eps, msg = "") => { if (!(Math.abs(a - b) <= eps)) fails.push(`${msg} got ${a} want ${b}±${eps}`); };
+const yes = (c, msg = "") => { if (!c) fails.push(`${msg} expected true`); };
+const no = (c, msg = "") => { if (c) fails.push(`${msg} expected false`); };
+const isNull = (v, msg = "") => { if (v !== null && v !== undefined) fails.push(`${msg} expected null, got ${show(v)}`); };
+
+const tests = [];
+const test = (name, fn) => tests.push([name, fn]);
+
+const P = (x, y, c) => ({ x, y, c });
+const r = (x1, y1, x2, y2) => ({ x: x1, y: y1, width: x2 - x1, height: y2 - y1 });
+
+// MARK: PoseGamesTests
+
+function gestureBody({ rightUp = false, leftUp = false } = {}) {
+  const p = Array.from({ length: 17 }, () => P(100, 300, 0.9));
+  p[K.nose] = P(100, 100, 0.9);
+  p[K.leftWrist] = leftUp ? P(60, 30, 0.9) : P(60, 320, 0.9);
+  p[K.rightWrist] = rightUp ? P(140, 30, 0.9) : P(140, 320, 0.9);
+  return new BodyPose(p);
+}
+
+function person({ nose = [100, 100], eyes = [[90, 95], [110, 95]], ears = [[80, 100], [120, 100]], shoulders = [[60, 160], [140, 160]],
+  elbows = [[45, 220], [155, 220]], wrists = [[50, 260], [150, 260]], conf = 0.9, hide = [], dy = 0 } = {}) {
+  const k = Array.from({ length: 17 }, () => P(0, 0, 0));
+  k[0] = P(nose[0], nose[1], conf);
+  k[1] = P(eyes[0][0], eyes[0][1], conf); k[2] = P(eyes[1][0], eyes[1][1], conf);
+  k[3] = P(ears[0][0], ears[0][1], conf); k[4] = P(ears[1][0], ears[1][1], conf);
+  k[5] = P(shoulders[0][0], shoulders[0][1], conf); k[6] = P(shoulders[1][0], shoulders[1][1], conf);
+  k[7] = P(elbows[0][0], elbows[0][1], conf); k[8] = P(elbows[1][0], elbows[1][1], conf);
+  k[9] = P(wrists[0][0], wrists[0][1], conf); k[10] = P(wrists[1][0], wrists[1][1], conf);
+  k[11] = P(70, 300, conf); k[12] = P(130, 300, conf);
+  for (const i of hide) k[i].c = 0.05;
+  return new BodyPose(k.map((p) => P(p.x, p.y + dy, p.c)), 1280, 720);
+}
+
+function standing({ kneeBend = 0, handsUp = false, armsOut = false } = {}) {
+  const k = Array.from({ length: 17 }, () => P(0, 0, 0.9));
+  k[K.nose] = P(320, 80, 0.9);
+  k[K.leftEye] = P(310, 75, 0.9); k[K.rightEye] = P(330, 75, 0.9);
+  k[K.leftEar] = P(300, 80, 0.9); k[K.rightEar] = P(340, 80, 0.9);
+  k[K.leftShoulder] = P(280, 130, 0.9); k[K.rightShoulder] = P(360, 130, 0.9);
+  if (handsUp) {
+    k[K.leftElbow] = P(270, 80, 0.9); k[K.rightElbow] = P(370, 80, 0.9);
+    k[K.leftWrist] = P(280, 30, 0.9); k[K.rightWrist] = P(360, 30, 0.9);
+  } else if (armsOut) {
+    k[K.leftElbow] = P(220, 130, 0.9); k[K.rightElbow] = P(420, 130, 0.9);
+    k[K.leftWrist] = P(160, 132, 0.9); k[K.rightWrist] = P(480, 128, 0.9);
+  } else {
+    k[K.leftElbow] = P(270, 190, 0.9); k[K.rightElbow] = P(370, 190, 0.9);
+    k[K.leftWrist] = P(270, 250, 0.9); k[K.rightWrist] = P(370, 250, 0.9);
+  }
+  k[K.leftHip] = P(295, 260, 0.9); k[K.rightHip] = P(345, 260, 0.9);
+  k[K.leftKnee] = P(295 - kneeBend, 350, 0.9); k[K.rightKnee] = P(345 + kneeBend, 350, 0.9);
+  k[K.leftAnkle] = P(295, 440, 0.9); k[K.rightAnkle] = P(345, 440, 0.9);
+  return new BodyPose(k);
+}
+
+const yoga = (id) => YOGA.find((p) => p.id === id);
+const check = (id, body) => { const [ok, hint] = yoga(id).check(body); return { ok, hint }; };
+
+test("PoseGames.testRawGestures", () => {
+  eq(raisedHands(gestureBody({ rightUp: true })), "right");
+  eq(raisedHands(gestureBody({ leftUp: true })), "left");
+  eq(raisedHands(gestureBody({ rightUp: true, leftUp: true })), "both");
+  eq(raisedHands(gestureBody()), "none");
+});
+
+const feed = (c, body, frames, start) => {
+  const outp = [];
+  for (let i = 0; i < frames; i++) { const a = c.update(raisedHands(body), start + i / 30); if (a != null) outp.push(a); }
+  return outp;
+};
+
+test("PoseGames.testHoldingAHandUpFlipsOnce", () => {
+  const c = new GestureController(4, 1.2);
+  eq(feed(c, gestureBody({ rightUp: true }), 6, 0), ["next"]);
+  feed(c, gestureBody(), 3, 0.2);
+  eq(feed(c, gestureBody({ rightUp: true }), 5, 1.6), ["next"]);
+});
+
+test("PoseGames.testFlickerDoesNotFlip", () => {
+  const c = new GestureController(4, 1.2);
+  const fired = [...feed(c, gestureBody({ rightUp: true }), 2, 0), ...feed(c, gestureBody(), 2, 0.1)];
+  eq(fired.length, 0);
+});
+
+test("PoseGames.testBothHandsRestartAndLeftGoesBack", () => {
+  const c = new GestureController(4, 1.2);
+  eq(feed(c, gestureBody({ rightUp: true, leftUp: true }), 5, 0), ["restart"]);
+  feed(c, gestureBody(), 2, 0.3);
+  eq(feed(c, gestureBody({ leftUp: true }), 5, 2), ["previous"]);
+});
+
+test("PoseGames.testCountRaisedHands", () => {
+  const up = gestureBody({ rightUp: true }), down = gestureBody();
+  eq(HandRaiseCounter.count([up, down, up]).raised, 2);
+  eq(HandRaiseCounter.count([up, down, up]).total, 3);
+  eq(HandRaiseCounter.count([]).total, 0);
+  const noNose = gestureBody({ rightUp: true });
+  noNose.points[K.nose].c = 0.1;
+  noNose.points[K.leftShoulder] = P(60, 120, 0.9); noNose.points[K.rightShoulder] = P(140, 120, 0.9);
+  yes(HandRaiseCounter.isRaised(noNose), "noNose");
+});
+
+test("PoseGames.testAirInstrumentPlaysOnEnteringAZone", () => {
+  const instrument = new AirInstrument(5, 0.15);
+  const body = gestureBody();
+  body.points[K.leftWrist] = P(10, 300, 0.9);
+  body.points[K.rightWrist] = P(630, 300, 0.9);
+  eq([...instrument.update([body], 0.5, 0)].sort(), [0, 4], "t0");
+  eq(instrument.update([body], 0.5, 0.05), [], "t0.05");
+  body.points[K.rightWrist] = P(330, 300, 0.9);
+  eq(instrument.update([body], 0.5, 0.1), [2], "t0.1");
+  body.points[K.rightWrist] = P(630, 300, 0.9);
+  eq(instrument.update([body], 0.5, 1.0), [4], "t1.0");
+  body.points[K.rightWrist].c = 0.1;
+  eq(instrument.update([body], 0.5, 1.05), [], "t1.05");
+  body.points[K.rightWrist].c = 0.9;
+  eq(instrument.update([body], 0.5, 1.1), [], "t1.1");
+  eq(instrument.zoneOf(640, 640), 4, "zone");
+});
+
+test("PoseGames.testYogaPoses", () => {
+  yes(check("tree", standing({ handsUp: true })).ok, "tree");
+  eq(check("tree", standing()).hint, "Raise both hands above your head");
+  yes(check("warrior", standing({ armsOut: true })).ok, "warrior2");
+  eq(check("warrior", standing()).hint, "Spread your arms out wide");
+  no(check("warrior1", standing({ handsUp: true })).ok, "warrior1 straight");
+  yes(check("warrior1", standing({ kneeBend: 60, handsUp: true })).ok, "warrior1 bent");
+  eq(check("squat", standing()).hint, "Bend your knees and squat down");
+});
+
+test("PoseGames.testYogaHoldTimer", () => {
+  const coach = new YogaCoach(yoga("tree"), 2, 3);
+  let state = coach.update(standing({ handsUp: true }), 0);
+  no(state.inPose, "first");
+  state = coach.update(standing({ handsUp: true }), 0.1);
+  state = coach.update(standing({ handsUp: true }), 0.2);
+  yes(state.inPose, "third");
+  state = coach.update(standing(), 1.0);
+  no(state.inPose, "dropped");
+  close(state.held, 0, 1e-9, "held");
+  for (let i = 0; 1.1 + i * 0.1 <= 3.5; i++) state = coach.update(standing({ handsUp: true }), 1.1 + i * 0.1);
+  yes(state.done, "done");
+});
+
+test("PoseGames.testYogaRoundGoesThroughEveryPoseOnce", () => {
+  const round = new YogaRound([yoga("tree"), yoga("warrior")], 1, 0.5, false);
+  eq(round.currentPose?.id, "tree");
+  let t = 0;
+  let state = round.update(standing({ handsUp: true }), t);
+  let guard = 0;
+  while (!state.celebrating && guard++ < 1000) { t += 0.1; state = round.update(standing({ handsUp: true }), t); }
+  t += 0.6;
+  state = round.update(standing({ armsOut: true }), t);
+  eq(round.currentPose?.id, "warrior");
+  eq(state.completed, 1);
+  round.skip();
+  yes(round.finished, "finished");
+  yes(round.update(null, t + 1).finished, "update finished");
+});
+
+test("PoseGames.testSquatCounter", () => {
+  const counter = new SquatCounter(2, 160, 105, 3);
+  const up = standing(), down = standing({ kneeBend: 120 });
+  yes(SquatCounter.kneeAngle(up) > 160, "up angle");
+  yes(SquatCounter.kneeAngle(down) < 105, "down angle");
+  let counted = 0;
+  for (const body of [...Array(3).fill(down), ...Array(3).fill(up), ...Array(2).fill(down), up]) if (counter.update(body).justCounted) counted++;
+  eq(counter.count, 1, "count1");
+  for (const body of [...Array(3).fill(down), ...Array(3).fill(up)]) counter.update(body);
+  eq(counter.count, 2, "count2");
+  yes(counter.done, "done");
+  no(counter.update(null).visible, "visible");
+  eq(counted, 1, "counted");
+});
+
+const noFlags = { raised: false, headDown: false, sleeping: false, turned: false };
+
+test("PoseGames.testAttentiveDefault", () => { eq(Attention.instantFlags(person()), noFlags); });
+
+test("PoseGames.testLaptopViewerIsNotHeadDown", () => {
+  const f = Attention.instantFlags(person({ nose: [100, 138], eyes: [[90, 106], [110, 106]] }));
+  no(f.headDown, "headDown"); no(f.sleeping, "sleeping");
+});
+
+test("PoseGames.testRealHeadDown", () => {
+  yes(Attention.instantFlags(person({ eyes: [[90, 112], [110, 112]] })).headDown, "eyes");
+  yes(Attention.instantFlags(person({ nose: [100, 148] })).headDown, "nose");
+});
+
+test("PoseGames.testRaiseHandNeedsElbowUpAndWristWellAboveEyes", () => {
+  yes(Attention.instantFlags(person({ elbows: [[45, 120], [155, 220]], wrists: [[50, 20], [150, 260]] })).raised, "1");
+  no(Attention.instantFlags(person({ wrists: [[50, 90], [150, 260]] })).raised, "2");
+  no(Attention.instantFlags(person({ elbows: [[45, 120], [155, 220]], wrists: [[50, 60], [150, 260]] })).raised, "3");
+  yes(Attention.instantFlags(person({ elbows: [[45, 60], [155, 220]], hide: [9] })).raised, "4");
+  no(Attention.instantFlags(person({ elbows: [[45, 120], [155, 220]], hide: [9] })).raised, "5");
+});
+
+test("PoseGames.testSleepingNoseBelowShoulder", () => { yes(Attention.instantFlags(person({ nose: [100, 170] })).sleeping); });
+
+test("PoseGames.testHeadMissingIsNeverSleeping", () => {
+  [person({ hide: [0, 1, 2] }), person({ hide: [0, 1, 2], dy: 400 }), person({ hide: [0, 1, 2, 3, 4] })].forEach((body, i) => {
+    const f = Attention.instantFlags(body);
+    no(f.sleeping, `sleeping ${i}`); no(f.headDown, `headDown ${i}`); no(f.turned, `turned ${i}`);
+  });
+});
+
+test("PoseGames.testFarSmallPersonSkipsFaceRules", () => {
+  const small = person({ nose: [100, 100], eyes: [[97, 97], [103, 97]], ears: [[95, 100], [105, 100]], shoulders: [[85, 120], [115, 120]], hide: [2] });
+  const f = Attention.instantFlags(small);
+  no(f.turned, "turned"); no(f.headDown, "headDown");
+});
+
+test("PoseGames.testTurnedOneEye", () => {
+  yes(Attention.instantFlags(person({ hide: [2] })).turned, "hide 2");
+  const k = person(); k.points[2].c = 0.35;
+  no(Attention.instantFlags(k).turned, "0.35");
+  no(Attention.instantFlags(person({ hide: [1, 2] })).turned, "hide 1 2");
+});
+
+test("PoseGames.testAssignPhones", () => {
+  const people = [{ id: 1, box: r(0, 0, 200, 300), shoulderY: 160, shoulderWidth: 80, wrists: [{ x: 100, y: 210 }] },
+    { id: 2, box: r(150, 0, 400, 300), shoulderY: 160, shoulderWidth: 80, wrists: [{ x: 240, y: 210 }] }];
+  const res = Attention.assignPhones([r(90, 200, 110, 220), r(230, 200, 250, 220), r(90, 50, 110, 70), r(500, 200, 520, 220)], people);
+  eq(res, new Map([[1, [r(90, 200, 110, 220)]], [2, [r(230, 200, 250, 220)]]]), "two people");
+  const desk = [{ id: 1, box: r(0, 0, 400, 600), shoulderY: 160, shoulderWidth: 80, wrists: [{ x: 100, y: 250 }] }];
+  eq(Attention.assignPhones([r(340, 540, 360, 560)], desk), new Map(), "desk");
+  const noWrist = [{ id: 1, box: r(0, 0, 400, 600), shoulderY: 160, shoulderWidth: 80, wrists: [] }];
+  eq(Attention.assignPhones([r(340, 540, 360, 560)], noWrist), new Map([[1, [r(340, 540, 360, 560)]]]), "noWrist");
+  eq(Attention.wrists(person()), [{ x: 50, y: 260 }, { x: 150, y: 260 }], "wrists");
+  eq(Attention.wrists(person({ hide: [9, 10] })), [], "no wrists");
+});
+
+test("PoseGames.testHoldTimingPriorityAndFreezeShift", () => {
+  const s = new AttentionPerson();
+  const enabled = new Set(Attention.priority);
+  const k = person({ eyes: [[90, 112], [110, 112]], elbows: [[45, 120], [155, 220]], wrists: [[50, 20], [150, 260]] });
+  const phone = [r(90, 200, 110, 220)];
+  eq(s.update(k, phone, enabled, 0.0), "ok", "0.0"); no(s.raised, "raised 0.0");
+  eq(s.update(k, phone, enabled, 1.3), "ok", "1.3"); yes(s.raised, "raised 1.3");
+  eq(s.update(k, phone, enabled, 2.1), "head_down", "2.1");
+  s.shift(10);
+  eq(s.update(k, phone, enabled, 12.5), "head_down", "12.5");
+  eq(s.update(k, phone, enabled, 13.1), "phone", "13.1");
+  enabled.delete("phone");
+  eq(s.update(k, phone, enabled, 13.2), "head_down", "13.2");
+  eq(s.update(person(), [], enabled, 13.3), "ok", "13.3"); no(s.raised, "raised 13.3");
+});
+
+test("PoseGames.testGridAndSummary", () => {
+  eq(Attention.gridCell(r(0, 0, 100, 100), 1280, 720), { row: 0, column: 0 });
+  eq(Attention.gridCell(r(1200, 650, 1270, 700), 1280, 720), { row: 2, column: 2 });
+  const a = new AttentionPerson(); a.state = "phone"; a.raised = true; a.box = r(1200, 650, 1270, 700);
+  const b = new AttentionPerson();
+  const s = Attention.summarize([a, b], 1280, 720);
+  eq(s.raised, 1); eq(s.grid[2][2], 1); eq(s.inattentive, 1); eq(s.byState.phone, 1);
+});
+
+test("PoseGames.testBoxFromKeypoints", () => {
+  isNull(Attention.box(new BodyPose(Array.from({ length: 17 }, () => P(0, 0, 0)))), "empty");
+  const box = Attention.box(person());
+  yes(box.x < 50, "minX"); yes(box.x + box.width > 150, "maxX"); yes(box.y < 95, "minY"); yes(box.y + box.height > 300, "maxY");
+  // `Attention.box(person(), only: 0...6)` skipped: the JS port has no `only` parameter.
+});
+
+// MARK: DetectionGamesTests
+
+test("DetectionGames.testIoU", () => {
+  close(boxIoU(r(0, 0, 10, 10), r(5, 5, 15, 15)), 25 / 175, 1e-9);
+  eq(boxIoU(r(0, 0, 10, 10), r(20, 20, 30, 30)), 0);
+});
+
+test("DetectionGames.testTrackerKeepsIDAndCountsOnce", () => {
+  const tracker = new CentroidTracker(), counter = new LineCounter(100), ids = new Set();
+  for (let k = 0; k < 12; k++) {
+    const y = 40 + k * 12;
+    const tracks = tracker.update([{ label: "car", box: r(100, y, 160, y + 40) }]);
+    ids.add(tracks[0].id);
+    counter.update(tracks);
+  }
+  eq(ids.size, 1); eq(counter.count("car", "down"), 1); eq(counter.total, 1);
+});
+
+test("DetectionGames.testTwoObjectsDifferentIDsAndDirections", () => {
+  const tracker = new CentroidTracker(), counter = new LineCounter(100);
+  for (let k = 0; k < 12; k++) {
+    const s = k * 12;
+    counter.update(tracker.update([{ label: "car", box: r(50, 40 + s, 110, 80 + s) }, { label: "person", box: r(400, 160 - s, 430, 220 - s) }]));
+  }
+  eq(counter.count("car", "down"), 1); eq(counter.count("person", "up"), 1);
+});
+
+test("DetectionGames.testTrackExpires", () => {
+  const tracker = new CentroidTracker(2);
+  tracker.update([{ label: "car", box: r(0, 0, 10, 10) }]);
+  for (let i = 0; i < 4; i++) tracker.update([]);
+  eq(tracker.tracks.size, 0);
+});
+
+test("DetectionGames.testNormalizePlate", () => {
+  eq(PlateText.normalize("ABC-1234"), "ABC-1234");
+  eq(PlateText.normalize("abc1234"), "ABC-1234");
+  eq(PlateText.normalize("1234-AB"), "1234-AB");
+  eq(PlateText.normalize("AB0-123"), "AB-0123");
+  isNull(PlateText.normalize("台北市"), "台北市");
+  isNull(PlateText.normalize(""), "empty");
+  eq(PlateText.normalize("AA-00-AA"), "AA-00-AA");
+  eq(PlateText.normalize("12 AB 34"), "12-AB-34");
+  eq(PlateText.normalize("12-34-XO"), "12-34-XO");
+  eq(PlateText.normalize("AB-12-34"), "AB-12-34");
+  isNull(PlateText.normalize("HELLO"), "HELLO");
+});
+
+test("DetectionGames.testMissingCheck", () => {
+  const c = new MissingCheck(3);
+  no(c.update(["cup", "mouse"]).armed, "armed");
+  c.setBaseline(["cup", "mouse", "person", "cup"]);
+  eq(c.baseline, ["cup", "mouse"], "baseline");
+  yes(c.update(["cup", "mouse", "person"]).allOK, "allOK");
+  eq(c.update(["cup"]).missing, [], "m1");
+  eq(c.update(["cup"]).missing, [], "m2");
+  eq(c.update(["cup"]).missing, ["mouse"], "m3");
+  const status = c.update(["cup", "mouse", "cell phone"]);
+  eq(status.missing, [], "missing"); eq(status.extra, ["cell phone"], "extra"); no(status.allOK, "allOK2");
+});
+
+test("DetectionGames.testBarrier", () => {
+  // The Swift `angle(now:)` (which also moves the state on) has no JS counterpart: only `display` is ported.
+  const shown = new GateBarrier();
+  eq(shown.display(0).angle, 0, "closed");
+  shown.open(0);
+  close(shown.display(0.5).angle, 45, 1e-9, "0.5");
+  eq(shown.display(3).state, "open", "3");
+  eq(shown.display(6.5).state, "closed", "6.5");
+  eq(shown.state, "opening", "unchanged");
+  const gate = new GateBarrier();
+  gate.deny(20);
+  eq(gate.state, "denied");
+});
+
+// MARK: FaceCheckInTests
+
+const M64 = (1n << 64n) - 1n;
+function unit(seed) {
+  const A = 6364136223846793005n, C = 1442695040888963407n;
+  let state = (BigInt(seed) * A + C) & M64;
+  let v = Array.from({ length: 512 }, () => {
+    state = (state * A + C) & M64;
+    return Math.fround(Number(BigInt.asIntN(64, state >> 11n) % 2000n) / 1000 - 1);
+  });
+  const n = Math.sqrt(v.reduce((s, x) => s + x * x, 0)); v = v.map((x) => x / n);
+  return v;
+}
+const mix = (a, wa, b, wb) => a.map((x, i) => x * wa + b[i] * wb);
+
+test("FaceCheckIn.testMatchAndAmbiguity", () => {
+  const g = new FaceGallery(); g.threshold = 0.45;
+  const a = unit(1);
+  g.enroll("A", a); g.enroll("B", unit(2));
+  eq(confidentMatch(g, mix(a, 0.9, unit(3), 0.1))?.name, "A", "match");
+  isNull(confidentMatch(g, unit(9)), "stranger");
+  const twins = new FaceGallery(); twins.threshold = 0.45;
+  twins.enroll("A", a); twins.enroll("B", mix(a, 0.98, unit(5), 0.02));
+  isNull(confidentMatch(twins, a), "twins");
+  twins.remove("B"); twins.enroll("B", unit(6));
+  eq(confidentMatch(twins, a)?.name, "A", "after remove");
+});
+
+test("FaceCheckIn.testAverageIsUnitLength", () => {
+  const avg = averageEmbedding([unit(1), unit(1), unit(2)]);
+  close(Math.sqrt(avg.reduce((s, x) => s + x * x, 0)), 1, 1e-5);
+  isNull(averageEmbedding([]), "empty");
+});
+
+test("FaceCheckIn.testCheckInNeedsAMomentAndResetHasGrace", () => {
+  const book = new CheckInBook(0.6, 3), u = (names, now) => book.update(new Set(names), now);
+  eq(u(["Ana"], 0), [], "0"); eq(u(["Ana"], 0.3), [], "0.3"); eq(u(["Ana"], 0.7), ["Ana"], "0.7"); eq(u(["Ana"], 1.0), [], "1.0");
+  u([], 1.1);
+  eq(u(["Rui"], 1.2), [], "1.2"); eq(u([], 1.5), [], "1.5"); eq(u(["Rui"], 1.6), [], "1.6"); eq(u(["Rui"], 2.3), ["Rui"], "2.3");
+  book.reset(3);
+  eq(book.checked.length, 0, "reset");
+  eq(u(["Ana"], 4), [], "4"); eq(u(["Ana"], 5.9), [], "5.9"); eq(u(["Ana"], 6.1), ["Ana"], "6.1");
+});
+
+// MARK: HandGamesTests
+
+function synth(ext, { thumbOpen = false, thumbUp = true, thumbTouchesIndex = false } = {}) {
+  const p = Array.from({ length: 21 }, () => ({ x: 0, y: 0 }));
+  p[0] = { x: 100, y: 200 };
+  const xs = [80, 95, 110, 125], base = [5, 9, 13, 17];
+  ext.forEach((straight, i) => {
+    const b = base[i], x = xs[i];
+    p[b] = { x, y: 150 };
+    if (straight) { p[b + 1] = { x, y: 125 }; p[b + 2] = { x, y: 105 }; p[b + 3] = { x, y: 85 }; }
+    else { p[b + 1] = { x, y: 140 }; p[b + 2] = { x: x + 5, y: 155 }; p[b + 3] = { x: x + 8, y: 165 }; }
+  });
+  p[1] = { x: 75, y: 185 }; p[2] = { x: 62, y: 170 };
+  if (thumbTouchesIndex) { p[3] = { x: 70, y: 160 }; p[4] = { ...p[8] }; }
+  else if (thumbOpen) { p[3] = { x: 48, y: 155 }; p[4] = thumbUp ? { x: 35, y: 140 } : { x: 35, y: 200 }; }
+  else { p[3] = { x: 66, y: 172 }; p[4] = { x: 64, y: 182 }; }
+  return p;
+}
+
+test("HandGames.testNumbers", () => {
+  eq(HandSigns.classify(synth([false, false, false, false])), "fist", "fist");
+  eq(HandSigns.classify(synth([true, false, false, false])), "one", "one");
+  eq(HandSigns.classify(synth([true, true, false, false])), "two", "two");
+  eq(HandSigns.classify(synth([true, true, true, false])), "three", "three");
+  eq(HandSigns.classify(synth([true, true, true, true])), "four", "four");
+  eq(HandSigns.classify(synth([true, true, true, true], { thumbOpen: true })), "five", "five");
+});
+
+test("HandGames.testSpecialSigns", () => {
+  eq(HandSigns.classify(synth([false, false, false, false], { thumbOpen: true, thumbUp: true })), "thumbsUp", "up");
+  eq(HandSigns.classify(synth([false, false, false, false], { thumbOpen: true, thumbUp: false })), "thumbsDown", "down");
+  eq(HandSigns.classify(synth([true, false, false, true])), "rock", "rock");
+  eq(HandSigns.classify(synth([false, true, true, true], { thumbTouchesIndex: true })), "ok", "ok");
+  eq(HandSigns.classify(synth([false, false, false, false], { thumbTouchesIndex: true })), "heart", "heart");
+  eq(HandSigns.classify(synth([false, false, false, true])), "pinky", "pinky");
+});
+
+test("HandGames.testRotationInvariant", () => {
+  const c = { x: 100, y: 150 };
+  const rotated = synth([true, true, false, false]).map((p) => ({ x: -(p.y - c.y) + c.x, y: (p.x - c.x) + c.y }));
+  eq(HandSigns.classify(rotated), "two");
+});
+
+test("HandGames.testSmoother", () => {
+  const s = new SignSmoother(3);
+  isNull(s.update("one"), "1"); isNull(s.update("one"), "2"); eq(s.update("one"), "one", "3");
+  eq(s.update("two"), "one", "4");
+  s.update("two");
+  eq(s.update("two"), "two", "6");
+});
+
+test("HandGames.testHandCropFollowsTheForearm", () => {
+  const points = Array.from({ length: 17 }, () => P(0, 0, 0));
+  points[K.rightElbow] = P(300, 400, 0.9);
+  points[K.rightWrist] = P(300, 300, 0.9);
+  const box = HandCrop.box(new BodyPose(points, 1280, 720), K.rightWrist, K.rightElbow);
+  close(box.size, 110, 1e-9, "size");
+  close(box.x + box.size / 2, 300, 1e-9, "cx");
+  close(box.y + box.size / 2, 300 - 110 * 0.35, 1e-9, "cy");
+  points[K.rightWrist].c = 0.1;
+  isNull(HandCrop.box(new BodyPose(points), K.rightWrist, K.rightElbow), "lost wrist");
+});
+
+test("HandGames.testFruitIsCutByAFastStroke", () => {
+  yes(segmentHitsCircle({ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 10 }, 12), "hit");
+  no(segmentHitsCircle({ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 40 }, 12), "miss");
+  const game = new FruitGame(30, 0, () => 0.5);
+  game.start(0);
+  game.update([], 0.8, 0.016);
+  eq(game.items.length, 1, "spawned");
+  const fruit = game.items[0];
+  const at = { x: fruit.x, y: fruit.y };
+  game.update([{ key: "R", point: { x: at.x - 0.5, y: at.y } }], 0.81, 0.01);
+  game.update([{ key: "R", point: { x: at.x + 0.5, y: at.y } }], 0.82, 0.01);
+  eq(game.score, 0, "slow");
+  const now = { x: game.items[0].x, y: game.items[0].y };
+  game.update([{ key: "R", point: { x: now.x + 60, y: now.y } }], 0.83, 0.01);
+  game.update([{ key: "R", point: { x: now.x - 60, y: now.y } }], 0.84, 0.01);
+  eq(game.score, 1, "fast");
+  game.update([], 31, 0.016);
+  eq(game.phase, "over", "phase"); eq(game.best, 1, "best");
+});
+
+test("HandGames.testAirBandZones", () => {
+  const band = new AirBand();
+  eq(band.update([{ id: "a", x: 660, y: 200 }], 0), [{ piano: 4, high: true }], "piano 4");
+  eq(band.update([{ id: "a", x: 665, y: 200 }], 0.2), [], "same key");
+  eq(band.update([{ id: "a", x: 700, y: 500 }], 0.4), [{ piano: 5, high: false }], "piano 5");
+  band.update([{ id: "b", x: 100, y: 450 }], 1.0);
+  eq(band.update([{ id: "b", x: 100, y: 600 }], 1.1), [{ drum: "kick" }], "kick");
+  band.update([{ id: "c", x: 1100, y: 100 }], 2.0);
+  eq(band.update([{ id: "c", x: 1100, y: 200 }], 2.1), [{ chord: 1 }], "chord");
+});
+
+// MARK: PhotoRestoreTests (testTileStarts skipped: the JS port has no tileStarts)
+
+test("PhotoRestore.testBrightenStrengthCap", () => {
+  close(brightenStrength(20), 0.9, 1e-9, "20");
+  close(brightenStrength(93.75), 0.45, 1e-9, "93.75");
+  close(brightenStrength(200), 0.15, 1e-9, "200");
+  close(brightenStrength(20, 0.3), 0.3, 1e-9, "user");
+});
+
+test("PhotoRestore.testTiledRunMatchesTheModelEverywhere", async () => {
+  const width = 100, height = 70, tile = 40;
+  const rgb = new Uint8Array(width * height * 3);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) { rgb[(y * width + x) * 3] = x * 2; rgb[(y * width + x) * 3 + 1] = y * 3; rgb[(y * width + x) * 3 + 2] = 77; }
+  const model = { name: "fake_x2", inputs: [{ width: tile, height: tile }], outputs: [{ width: tile * 2, height: tile * 2 }] };
+  const engine = {
+    async infer(inputs) {
+      const input = inputs[0], o = new Float32Array(tile * 2 * tile * 2 * 3);
+      for (let y = 0; y < tile * 2; y++) for (let x = 0; x < tile * 2; x++) for (let c = 0; c < 3; c++)
+        o[(y * tile * 2 + x) * 3 + c] = Math.fround(input[(Math.floor(y / 2) * tile + Math.floor(x / 2)) * 3 + c] / 255);
+      return [{ values: o }];
+    },
+  };
+  const res = await restore(rgb, width, height, model, engine);
+  eq(res.width, 200, "w"); eq(res.height, 140, "h");
+  for (const [x, y] of [[0, 0], [57, 33], [99, 69], [31, 31], [32, 32]]) for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
+    const d = ((y * 2 + dy) * 200 + x * 2 + dx) * 3;
+    eq([res.rgb[d], res.rgb[d + 1], res.rgb[d + 2]], [(x * 2) & 255, (y * 3) & 255, 77], `(${x},${y})+(${dx},${dy})`);
+  }
+});
+
+test("PhotoRestore.testBlend", () => {
+  const a = new Uint8Array([0, 0, 0]), b = new Uint8Array([200, 100, 50]);
+  eq([...blend(a, 1, 1, b, 1, 1, 0.5)], [100, 50, 25], "0.5");
+  eq([...blend(a, 1, 1, b, 1, 1, 1)], [...b], "1");
+});
+
+// MARK: LanguageGamesTests
+
+const item = (name, kcal, proteinGrams, portion = "") => ({ item: name, portion, kcal, proteinGrams });
+
+test("LanguageGames.testCleanJSON", () => {
+  eq(Nutrition.parseItems('[{"item":"炸雞腿便當","portion":"1 份","kcal":850,"protein_g":35}]'), [item("炸雞腿便當", 850, 35, "1 份")]);
+});
+
+test("LanguageGames.testWrappedInTextAndFence", () => {
+  const t = "好的,以下是估算:\n```json\n[{\"item\":\"珍珠奶茶\",\"portion\":\"700ml\",\"kcal\":\"約 500 大卡\",\"protein_g\":7.6}]\n```\n希望有幫助。";
+  const res = Nutrition.parseItems(t);
+  eq(res[0]?.item, "珍珠奶茶", "item"); eq(res[0]?.kcal, 500, "kcal"); eq(res[0]?.proteinGrams, 8, "protein");
+});
+
+test("LanguageGames.testSingleQuotesAndTrailingComma", () => {
+  const res = Nutrition.parseItems("[{'item': '白飯', 'portion': '一碗', 'kcal': 280, 'protein_g': 5,},]");
+  eq(res[0]?.item, "白飯", "item"); eq(res[0]?.kcal, 280, "kcal");
+});
+
+test("LanguageGames.testGarbageReturnsEmpty", () => {
+  eq(Nutrition.parseItems("這張照片沒有食物。"), [], "text");
+  eq(Nutrition.parseItems(""), [], "empty");
+  eq(Nutrition.parseItems("["), [], "[");
+});
+
+test("LanguageGames.testUnquotedKeysAndTruncatedArray", () => {
+  const t = "```json\n[\n  {\n    \"item\":\"茶包\",\n    portion:\"一包\",\n    kcal:0,\n    protein_g:0\n  },\n  {\n    \"item\":\"牛奶\",\n    portion:\"一杯(250ml)\",\n    kcal:367,\n    protein_g:+14.";
+  const res = Nutrition.parseItems(t);
+  eq(res.map((i) => i.item), ["茶包"], "items"); eq(res[0]?.portion, "一包", "portion");
+});
+
+test("LanguageGames.testChineseKeyAliasesAndSpaceInKey", () => {
+  const t = "[\n  {\"品名\":\"牛奶\",\"portion\":\"一杯\",\"kcal\":210,\" protein_g\":3.5},\n  {\"品名\":\"巧克力棒\",\"份量\":\"一包\",\"熱量\":486,\"蛋白質\":7.9}\n]";
+  const res = Nutrition.parseItems(t);
+  eq(res.map((i) => i.item), ["牛奶", "巧克力棒"], "items");
+  eq(res[0]?.proteinGrams, 4, "protein"); eq(res[1]?.kcal, 486, "kcal"); eq(res[1]?.portion, "一包", "portion");
+});
+
+test("LanguageGames.testOneCalorieIsNotABoolean", () => {
+  eq(Nutrition.parseItems('[{"item":"gum","kcal":1,"protein_g":true}]')[0]?.kcal, 1, "kcal");
+  eq(Nutrition.parseItems('[{"item":"gum","kcal":1,"protein_g":true}]')[0]?.proteinGrams, 0, "protein");
+});
+
+test("LanguageGames.testTotalsAndDailyLog", () => {
+  const items = [item("a", 100, 3), item("b", 50, 2)];
+  eq(Nutrition.totals(items), { kcal: 150, proteinGrams: 5 }, "totals");
+  // DailyLog lives in localStorage: keep whatever was there and put it back afterwards.
+  let saved = null;
+  try { saved = localStorage.getItem(DailyLog.key); localStorage.removeItem(DailyLog.key); } catch { /* no storage */ }
+  try {
+    const log = DailyLog.load();
+    log.add([item("x", 300, 1)]);
+    const again = DailyLog.load();
+    eq(again.kcal, 300, "kcal"); eq(again.meals.length, 1, "meals");
+    const tomorrow = new Date(Date.now() + 86400 * 1.5 * 1000);
+    eq(DailyLog.load(tomorrow).kcal, 0, "tomorrow");
+  } finally {
+    try { if (saved === null) localStorage.removeItem(DailyLog.key); else localStorage.setItem(DailyLog.key, saved); } catch { /* no storage */ }
+  }
+});
+
+const pairs = (blocks) => blocks.map((b) => [b.language, b.code]);
+
+test("LanguageGames.testSplitTextAndCode", () => {
+  eq(CodeBlocks.split("說明一下\n```python\nprint(1)\n```\n結尾"), [{ text: "說明一下\n" }, { language: "python", code: "print(1)" }, { text: "\n結尾" }]);
+});
+
+test("LanguageGames.testLanguageAliasEmptyAndCRLF", () => {
+  eq(pairs(CodeBlocks.blocks("```py\nx=1\n```")), [["python", "x=1"]], "py");
+  eq(pairs(CodeBlocks.blocks("```\nplain\n```")), [["text", "plain"]], "plain");
+  eq(pairs(CodeBlocks.blocks("```python\r\nx=1\r\ny=2\r\n```")), [["python", "x=1\ny=2"]], "crlf");
+  eq(pairs(CodeBlocks.blocks("```js\nconsole.log(1)\n```")), [["javascript", "console.log(1)"]], "js");
+});
+
+test("LanguageGames.testUnclosedFenceWhileStreaming", () => {
+  eq(pairs(CodeBlocks.blocks("開頭\n```python\nfor i in range(3):\n    pri")), [["python", "for i in range(3):\n    pri"]], "blocks");
+  eq(CodeBlocks.textOnly("開頭\n```python\nx"), "開頭\n[python code → shown on the right]", "textOnly");
+  eq(CodeBlocks.textOnly("先說明\n```python"), "先說明", "fence lang");
+  eq(CodeBlocks.textOnly("先說明\n```"), "先說明", "fence");
+});
+
+test("LanguageGames.testLastCodePrefersAndSkipsEmpty", () => {
+  const t = "```bash\npip install x\n```\n```javascript\nlet x = 1\n```\n```bash\nls\n```";
+  eq(pairs([CodeBlocks.last(t)]), [["javascript", "let x = 1"]], "prefers");
+  eq(pairs([CodeBlocks.last("```javascript\n\n```\n```bash\nls\n```")]), [["bash", "ls"]], "skips empty");
+  isNull(CodeBlocks.last("no code"), "none");
+});
+
+test("LanguageGames.testMeetingSummaryCheck", () => {
+  yes(MeetingNotes.looksValid(MeetingNotes.exampleOutput), "example");
+  no(MeetingNotes.looksValid("Key Points: nothing"), "short");
+  yes(MeetingNotes.userMessage("hello").includes("----- Transcript -----\nhello"), "message");
+});
+
+test("LanguageGames.testThinkingRemoved", () => {
+  eq(withoutThinking("<think>hmm</think>\nAnswer"), "Answer", "closed");
+  eq(withoutThinking("Answer <think>still going"), "Answer", "open");
+});
+
+// MARK: TrackerTests
+
+const det = (x, y, { width = 0.1, height = 0.1, confidence = 0.9, classIndex = 0 } = {}) =>
+  ({ label: `class ${classIndex}`, classIndex, confidence, boundingBox: { x: x - width / 2, y: y - height / 2, width, height } });
+const tid = (results, x, y) => results.find((t) => Math.abs(t.detection.boundingBox.x + t.detection.boundingBox.width / 2 - x) < 1e-9 &&
+  Math.abs(t.detection.boundingBox.y + t.detection.boundingBox.height / 2 - y) < 1e-9)?.trackID ?? null;
+const idsOf = (results) => results.map((t) => t.trackID);
+
+test("Tracker.testObjectsCrossingInNeighbouringLanesKeepTheirIDs", () => {
+  const tracker = new ObjectTracker();
+  for (let frame = 0; frame < 60; frame++) {
+    const right = 0.1 + 0.0125 * frame, left = 0.9 - 0.0125 * frame;
+    const res = tracker.update([det(right, 0.5), det(left, 0.53)]);
+    eq(res.length, 2, `frame ${frame} count`); eq(tid(res, right, 0.5), 1, `frame ${frame} right`); eq(tid(res, left, 0.53), 2, `frame ${frame} left`);
+  }
+});
+
+test("Tracker.testObjectsCrossingInTheSameLaneKeepTheirIDs", () => {
+  const tracker = new ObjectTracker();
+  for (let frame = 0; frame < 41; frame++) {
+    const right = 0.10 + 0.02 * frame, left = 0.91 - 0.02 * frame;
+    const input = [det(right, 0.5), det(left, 0.5)];
+    if (frame % 2 === 1) input.reverse();
+    const res = tracker.update(input);
+    eq(res.length, 2, `frame ${frame} count`); eq(tid(res, right, 0.5), 1, `frame ${frame} right`); eq(tid(res, left, 0.5), 2, `frame ${frame} left`);
+  }
+});
+
+test("Tracker.testObjectMissingForLessThanTheLostWindowKeepsItsID", () => {
+  const tracker = new ObjectTracker({ maxLost: 10 });
+  let frame = 0;
+  const position = () => 0.2 + 0.01 * frame;
+  for (let i = 0; i < 10; i++) { eq(idsOf(tracker.update([det(position(), 0.5)])), [1], `a${i}`); frame++; }
+  for (let i = 0; i < 5; i++) { eq(tracker.update([]).length, 0, `b${i}`); frame++; }
+  for (let i = 0; i < 10; i++) { eq(idsOf(tracker.update([det(position(), 0.5)])), [1], `c${i}`); frame++; }
+});
+
+test("Tracker.testObjectMissingForExactlyTheLostWindowKeepsItsID", () => {
+  const tracker = new ObjectTracker({ maxLost: 10 });
+  for (let i = 0; i < 5; i++) tracker.update([det(0.5, 0.5)]);
+  for (let i = 0; i < 10; i++) tracker.update([]);
+  eq(idsOf(tracker.update([det(0.5, 0.5)])), [1]);
+});
+
+test("Tracker.testObjectMissingForLongerThanTheLostWindowGetsANewID", () => {
+  const tracker = new ObjectTracker({ maxLost: 10 });
+  for (let i = 0; i < 5; i++) eq(idsOf(tracker.update([det(0.5, 0.5)])), [1], `a${i}`);
+  for (let i = 0; i < 11; i++) tracker.update([]);
+  eq(tracker.update([det(0.5, 0.5)]).length, 0, "tentative");
+  for (let i = 0; i < 5; i++) eq(idsOf(tracker.update([det(0.5, 0.5)])), [2], `b${i}`);
+});
+
+test("Tracker.testOtherObjectsKeepTheirIDsWhileOneIsMissing", () => {
+  const tracker = new ObjectTracker(), staying = det(0.2, 0.2), blinking = det(0.7, 0.7);
+  for (let frame = 0; frame < 30; frame++) {
+    const hidden = frame >= 10 && frame < 15;
+    eq(idsOf(tracker.update(hidden ? [staying] : [staying, blinking])), hidden ? [1] : [1, 2], `frame ${frame}`);
+  }
+});
+
+test("Tracker.testConfidenceDipBetweenTheThresholdsKeepsTheID", () => {
+  const tracker = new ObjectTracker({ high: 0.5, low: 0.1 });
+  for (let frame = 0; frame < 30; frame++) {
+    const confidence = frame >= 10 && frame < 20 ? 0.2 : 0.9;
+    const res = tracker.update([det(0.2 + 0.01 * frame, 0.5, { confidence })]);
+    eq(idsOf(res), [1], `frame ${frame}`); eq(res[0]?.detection.confidence, confidence, `conf ${frame}`);
+  }
+});
+
+test("Tracker.testLowConfidenceDetectionsNeverStartATrack", () => {
+  const tracker = new ObjectTracker();
+  for (let i = 0; i < 10; i++) eq(tracker.update([det(0.5, 0.5, { confidence: 0.3 })]).length, 0, `low ${i}`);
+  tracker.update([det(0.5, 0.5)]);
+  eq(idsOf(tracker.update([det(0.5, 0.5)])), [1], "first confident");
+});
+
+test("Tracker.testDetectionsBelowTheLowThresholdAreIgnored", () => {
+  const tracker = new ObjectTracker();
+  for (let i = 0; i < 3; i++) tracker.update([det(0.5, 0.5)]);
+  eq(tracker.update([det(0.5, 0.5, { confidence: 0.05 })]).length, 0, "ignored");
+  eq(idsOf(tracker.update([det(0.5, 0.5)])), [1], "back");
+});
+
+test("Tracker.testStillSceneKeepsTheSameIDsAndCreatesNoExtraTracks", () => {
+  const tracker = new ObjectTracker();
+  const scene = [det(0.2, 0.2), det(0.25, 0.22), det(0.7, 0.3, { width: 0.3, height: 0.2 }), det(0.5, 0.8, { classIndex: 2 }), det(0.9, 0.9, { confidence: 0.3 })];
+  for (let frame = 0; frame < 50; frame++) {
+    const res = tracker.update(scene);
+    eq(idsOf(res), [1, 2, 3, 4], `frame ${frame}`);
+    yes(res.length === 4 && res.every((t, i) => t.detection === scene[i]), `frame ${frame} detections`);
+  }
+  const newcomer = det(0.1, 0.8);
+  tracker.update([...scene, newcomer]);
+  eq(idsOf(tracker.update([...scene, newcomer])), [1, 2, 3, 4, 5], "newcomer");
+});
+
+test("Tracker.testOverlappingObjectsOfDifferentClassesDoNotSwapIDs", () => {
+  const tracker = new ObjectTracker();
+  for (let frame = 0; frame < 60; frame++) {
+    const p = det(0.2 + 0.01 * frame, 0.5, { classIndex: 0 }), bike = det(0.5, 0.5, { classIndex: 1 });
+    const res = tracker.update(frame % 2 === 0 ? [p, bike] : [bike, p]);
+    eq(res.length, 2, `frame ${frame} count`);
+    eq(res.find((t) => t.detection.classIndex === 0)?.trackID, 1, `frame ${frame} person`);
+    eq(res.find((t) => t.detection.classIndex === 1)?.trackID, 2, `frame ${frame} bicycle`);
+  }
+});
+
+test("Tracker.testClassChangeStartsANewTrackOnlyWhenMatchingByClass", () => {
+  const before = det(0.5, 0.5, { classIndex: 0 }), after = det(0.5, 0.5, { classIndex: 1 });
+  const strict = new ObjectTracker();
+  strict.update([before]);
+  eq(strict.update([after]).length, 0, "strict tentative");
+  eq(idsOf(strict.update([after])), [2], "strict");
+  const relaxed = new ObjectTracker({ sameClassOnly: false });
+  relaxed.update([before]);
+  eq(idsOf(relaxed.update([after])), [1], "relaxed");
+});
+
+test("Tracker.testIDsAreNeverReusedAndRestartAfterReset", () => {
+  const tracker = new ObjectTracker({ maxLost: 3 }), seen = [];
+  for (let object = 0; object < 10; object++) {
+    const x = 0.05 + 0.09 * object;
+    for (let i = 0; i < 4; i++) {
+      const ids = idsOf(tracker.update([det(x, 0.5, { width: 0.05 })]));
+      if (ids.length && seen[seen.length - 1] !== ids[0]) seen.push(ids[0]);
+    }
+    for (let i = 0; i < 5; i++) tracker.update([]);
+  }
+  eq(seen, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "seen");
+  tracker.update([det(0.05, 0.5, { width: 0.05 })]);
+  eq(idsOf(tracker.update([det(0.05, 0.5, { width: 0.05 })])), [11], "fresh");
+  tracker.reset();
+  eq(idsOf(tracker.update([det(0.3, 0.3), det(0.7, 0.7)])), [1, 2], "reset");
+});
+
+test("Tracker.testNewTrackIsReportedAfterMinimumHitsExceptOnTheFirstFrame", () => {
+  const tracker = new ObjectTracker({ minHits: 3 }), first = det(0.2, 0.2), late = det(0.8, 0.8);
+  eq(idsOf(tracker.update([first])), [1], "1");
+  eq(idsOf(tracker.update([first, late])), [1], "2");
+  eq(idsOf(tracker.update([first, late])), [1], "3");
+  eq(idsOf(tracker.update([first, late])), [1, 2], "4");
+});
+
+test("Tracker.testOneFrameFlickerDoesNotConsumeAnID", () => {
+  const tracker = new ObjectTracker(), steady = det(0.2, 0.2);
+  tracker.update([steady]);
+  eq(idsOf(tracker.update([steady, det(0.8, 0.8)])), [1], "flicker");
+  eq(idsOf(tracker.update([steady])), [1], "gone");
+  const real = det(0.5, 0.8);
+  tracker.update([steady, real]);
+  eq(idsOf(tracker.update([steady, real])), [1, 2], "real");
+});
+
+test("Tracker.testEmptyAndInvalidInput", () => {
+  const tracker = new ObjectTracker();
+  eq(tracker.update([]).length, 0, "empty");
+  const broken = { label: "x", classIndex: 0, confidence: 0.9, boundingBox: { x: 0.5, y: 0.5, width: 0, height: 0.1 } };
+  const notFinite = { label: "x", classIndex: 0, confidence: 0.9, boundingBox: { x: NaN, y: 0.5, width: 0.1, height: 0.1 } };
+  for (let i = 0; i < 3; i++) eq(tracker.update([broken, notFinite]).length, 0, `invalid ${i}`);
+});
+
+class SplitMix64 {
+  constructor(seed) { this.state = BigInt(seed); }
+  next() {
+    this.state = (this.state + 0x9E3779B97F4A7C15n) & M64;
+    let z = this.state;
+    z = ((z ^ (z >> 30n)) * 0xBF58476D1CE4E5B9n) & M64;
+    z = ((z ^ (z >> 27n)) * 0x94D049BB133111EBn) & M64;
+    return z ^ (z >> 31n);
+  }
+}
+
+function bruteForceMinimum(cost) {
+  const rows = cost.length, columns = cost[0].length;
+  if (rows > columns) return bruteForceMinimum(Array.from({ length: columns }, (_, c) => cost.map((row) => row[c])));
+  const best = (row, used) => {
+    if (row === rows) return 0;
+    let smallest = Infinity;
+    for (let c = 0; c < columns; c++) if (!used.has(c)) smallest = Math.min(smallest, cost[row][c] + best(row + 1, new Set([...used, c])));
+    return smallest;
+  };
+  return best(0, new Set());
+}
+
+test("Tracker.testAssignmentMatchesBruteForceOnSmallMatrices", () => {
+  const g = new SplitMix64(42);
+  for (let n = 0; n < 300 && fails.length < 5; n++) {
+    const rows = Number(g.next() % 6n) + 1, columns = Number(g.next() % 6n) + 1;
+    const cost = Array.from({ length: rows }, () => Array.from({ length: columns }, () => Number(g.next() % 100n)));
+    const a = assign(cost);
+    eq(a.length, rows, `case ${n} rows`);
+    const used = a.filter((c) => c !== null);
+    eq(used.length, Math.min(rows, columns), `case ${n} pairs`);
+    eq(new Set(used).size, used.length, `case ${n} column used twice`);
+    let total = 0;
+    a.forEach((c, row) => { if (c !== null) total += cost[row][c]; });
+    close(total, bruteForceMinimum(cost), 1e-9, `case ${n} total`);
+  }
+});
+
+test("Tracker.testAssignmentPrefersTheBestTotalOverTheBestSinglePair", () => {
+  eq(assign([[1, 2], [2, 100]]), [1, 0], "best total");
+  eq(assign([]).length, 0, "empty");
+  eq(assign([[], []]), [null, null], "no columns");
+});
+
+
+// MARK: PrivacyTests
+
+/** A width x height canvas filled with one grey level. */
+function greyPicture(width, height, grey) {
+  const c = Object.assign(document.createElement("canvas"), { width, height }), ctx = c.getContext("2d");
+  ctx.fillStyle = `rgb(${grey},${grey},${grey})`; ctx.fillRect(0, 0, width, height);
+  return c;
+}
+const redAt = (c, x, y) => c.getContext("2d").getImageData(x, y, 1, 1).data[0];
+
+test("Privacy.testSolidStyleCoversTheBoxOnly", () => {
+  const out = PrivacyFilter.apply(greyPicture(200, 100, 255), [region("face", { x: 0.1, y: 0.2, width: 0.2, height: 0.4 })], "Solid");   // pixels x 20...60, y 20...60
+  eq(out.width, 200);
+  yes(redAt(out, 40, 40) < 60, "inside the box is filled");
+  yes(redAt(out, 150, 40) > 240, "outside the box is untouched");
+  yes(redAt(out, 40, 90) > 240, "below the box is untouched (no upside-down mask)");
+});
+
+test("Privacy.testPersonMaskHidesTheMaskNotTheWholeBox", () => {
+  // A 20x10 mask over the whole picture with only its left half set; the box claims the whole picture.
+  const bits = new Uint8Array(20 * 10);
+  for (let y = 0; y < 10; y++) for (let x = 0; x < 10; x++) bits[y * 20 + x] = 255;
+  const person = { detection: { label: "person", classIndex: 0, confidence: 0.9, boundingBox: { x: 0, y: 0, width: 1, height: 1 } }, maskWidth: 20, maskHeight: 10, mask: bits };
+  const out = PrivacyFilter.apply(greyPicture(200, 100, 255), PrivacyScan.people([person]), "Solid");
+  yes(redAt(out, 40, 50) < 60, "inside the mask");
+  yes(redAt(out, 170, 50) > 240, "outside the mask, inside the box");
+});
+
+test("Privacy.testNoRegionsReturnsThePicture", () => {
+  const out = PrivacyFilter.apply(greyPicture(10, 10, 128), [], "Blur");
+  close(redAt(out, 5, 5), 128, 1, "a plain copy");
+});
+
+test("Privacy.testHoldKeepsAMissedFaceForAWhile", () => {
+  const hold = new RegionHold(0.5), face = region("face", { x: 0.4, y: 0.4, width: 0.1, height: 0.1 });
+  eq(hold.update([face], 0).length, 1);
+  eq(hold.update([], 0.3).length, 1, "missed for 0.3 s: still hidden");
+  eq(hold.update([], 0.6).length, 0, "gone for longer than the hold");
+});
+
+test("Privacy.testHoldReplacesARegionFoundAgain", () => {
+  const hold = new RegionHold(1);
+  hold.update([region("face", { x: 0.4, y: 0.4, width: 0.1, height: 0.1 })], 0);
+  const moved = hold.update([region("face", { x: 0.42, y: 0.4, width: 0.1, height: 0.1 })], 0.1);
+  eq(moved.length, 1, "the same face, moved a little, is not hidden twice");
+  close(moved[0].box.x, 0.42, 1e-9);
+  const plate = hold.update([region("plate", { x: 0.42, y: 0.4, width: 0.1, height: 0.1 })], 0.2);
+  eq(plate.length, 2, "a plate does not replace a face");
+});
+
+test("Privacy.testGrowStaysInsideThePicture", () => {
+  const box = PrivacyScan.grow({ x: 0, y: 0.05, width: 0.2, height: 0.2 }, 0.2, 0.5, 0.1);
+  close(box.x, 0, 1e-9); close(box.y, 0, 1e-9);
+  close(box.x + box.width, 0.24, 1e-9); close(box.y + box.height, 0.27, 1e-9);
+});
+
+// Web only: the blur really hides (strong enough), and covers the picture's edges too (edges clamped).
+test("Privacy.testBlurHidesDetailUpToTheEdges", () => {
+  const c = greyPicture(400, 200, 0), ctx = c.getContext("2d");
+  for (let x = 0; x < 400; x += 4) { ctx.fillStyle = (x / 4) % 2 ? "#fff" : "#000"; ctx.fillRect(x, 0, 2, 200); }   // fine stripes
+  const out = PrivacyFilter.apply(c, [region("face", { x: 0, y: 0, width: 0.5, height: 1 })], "Blur");
+  const row = out.getContext("2d").getImageData(0, 100, 400, 1).data;
+  let lo = 255, hi = 0;
+  for (let x = 0; x < 180; x++) { lo = Math.min(lo, row[x * 4]); hi = Math.max(hi, row[x * 4]); }
+  yes(hi - lo < 40, `stripes gone inside, edge included (spread ${hi - lo})`);
+  let lo2 = 255, hi2 = 0;
+  for (let x = 220; x < 400; x++) { lo2 = Math.min(lo2, row[x * 4]); hi2 = Math.max(hi2, row[x * 4]); }
+  yes(hi2 - lo2 > 200, "untouched outside");
+  eq(out.getContext("2d").getImageData(0, 0, 1, 1).data[3], 255, "opaque at the corner");
+});
+
+test("Privacy.testPixelateAndPlatesAndSearchArea", () => {
+  const c = greyPicture(400, 200, 0), ctx = c.getContext("2d");
+  for (let x = 0; x < 400; x += 2) { ctx.fillStyle = (x / 2) % 2 ? "#fff" : "#000"; ctx.fillRect(x, 0, 1, 200); }
+  const out = PrivacyFilter.apply(c, [region("text", { x: 0, y: 0, width: 1, height: 1 })], "Pixelate");
+  const row = out.getContext("2d").getImageData(0, 50, 10, 1).data;
+  yes(Math.abs(row[0] - row[9 * 4]) < 2, "one block of about 10 pixels has one colour");
+  // The 4 largest vehicles only, largest first.
+  const v = (label, w) => ({ detection: { label, boundingBox: { x: 0, y: 0, width: w, height: w } } });
+  eq(PrivacyScan.vehicles([v("car", 0.1), v("person", 0.9), v("bus", 0.5), v("truck", 0.2), v("motorcycle", 0.05), v("car", 0.3)]).map((b) => b.width), [0.5, 0.3, 0.2, 0.1]);
+  // Text boxes from corners, grown 15% left and right and 30% up and down.
+  const t = PrivacyScan.text([{ x: 0.4, y: 0.5 }, { x: 0.6, y: 0.5 }, { x: 0.6, y: 0.6 }, { x: 0.4, y: 0.6 }], "plate");
+  eq(t.kind, "plate"); close(t.box.x, 0.37, 1e-9); close(t.box.width, 0.26, 1e-9); close(t.box.y, 0.47, 1e-9); close(t.box.height, 0.16, 1e-9);
+  // Whole pixels outwards; too small to read is skipped.
+  const a = PrivacyScan.searchArea({ x: 0.101, y: 0.2, width: 0.5, height: 0.5 }, 100, 100);
+  close(a.x, 0.1, 1e-9); close(a.width, 0.51, 1e-9);
+  isNull(PrivacyScan.searchArea({ x: 0.5, y: 0.5, width: 0.1, height: 0.1 }, 100, 100), "10 x 10 pixels");
+});
+
+// MARK: SteadyVideoTests
+
+test("SteadyVideo.testPacerStepsEvenlyAndKeepsUp", () => {
+  // A model at 13 frames per second on a 30 fps video: the step settles on 2 or 3 and stays there for seconds.
+  const pacer = new FramePacer(30), steps = [];
+  let now = 0;
+  for (let i = 0; i < 13 * 20; i++) { steps.push(pacer.advance(now)); now += 1 / 13; }
+  let changes = 0;
+  for (let i = 2; i < steps.length; i++) if (steps[i] !== steps[i - 1]) changes++;
+  yes(changes <= 10, `the step changes rarely (${changes} changes)`);
+  yes(steps.slice(1).every((x) => x >= 1 && x <= 4), "steps of 1 to 4");
+  close(pacer.shown, now, 0.5, "the video stays within the tolerance of real time");
+});
+
+test("SteadyVideo.testPacerWaitsWhenTheModelIsFast", () => {
+  const pacer = new FramePacer(25);
+  let shown = 0, now = 0;
+  while (now < 4) { shown += pacer.advance(now); now += 1 / 100; }
+  close(shown, 4 * 25, 2, "every frame once, at the video's own speed");
+});
+
+test("SteadyVideo.testSmootherSteadiesJitterButFollowsMovement", () => {
+  const smoother = new TrackSmoother(), raw = [], steady = [];
+  for (let k = 0; k < 60; k++) {
+    const box = { x: 0.4 + (k % 2 === 0 ? 0.004 : -0.004), y: 0.4, width: 0.2, height: 0.3 };
+    raw.push(box.x); steady.push(smoother.box(box, 1, k / 15).x);
+  }
+  const spread = (v) => Math.max(...v) - Math.min(...v);
+  yes(spread(steady.slice(30)) < spread(raw.slice(30)) * 0.5, `jitter at least halved (${spread(steady.slice(30)).toFixed(4)} of ${spread(raw.slice(30)).toFixed(4)})`);
+  let moved;
+  for (let k = 60; k < 64; k++) moved = smoother.box({ x: 0.7, y: 0.4, width: 0.2, height: 0.3 }, 1, k / 15);
+  close(moved.x, 0.7, 0.03, "a fast move is followed within a few frames");
+});
+
+test("SteadyVideo.testTrackerSteadiesPosesUnlessTurnedOff", () => {
+  const pose = (x) => ({ confidence: 0.9, boundingBox: { x, y: 0.2, width: 0.2, height: 0.6 },
+    keypoints: Array.from({ length: 17 }, () => ({ position: { x: x + 0.1, y: 0.5 }, confidence: 0.9 })) });
+  const steady = new ObjectTracker(), plain = new ObjectTracker();
+  plain.steadies = false;
+  let lastSteady, lastPlain;
+  for (let k = 0; k < 30; k++) {
+    const x = 0.4 + (k % 2 === 0 ? 0.005 : -0.005);
+    lastSteady = steady.track({ kind: "poses", value: [pose(x)] }, k / 15).value[0];
+    lastPlain = plain.track({ kind: "poses", value: [pose(x)] }, k / 15).value[0];
+  }
+  close(lastPlain.keypoints[0].position.x, 0.495, 1e-9, "off: raw");
+  close(lastSteady.keypoints[0].position.x, 0.5, 0.003, "on: steadied");
+  yes(lastSteady.trackID != null, "numbered");
+  close(lastSteady.keypoints[0].confidence, 0.9, 1e-9, "confidences kept");
+});
+
+for (const [name, fn] of tests) {
+  fails = [];
+  try { await fn(); } catch (e) { fails.push(`threw ${e?.stack ?? e}`); }
+  say(`RESULT ${JSON.stringify({ test: name, ok: fails.length === 0, detail: fails.slice(0, 6).join(" | ").slice(0, 900) })}`);
+}
+say("DONE");
+</script>
