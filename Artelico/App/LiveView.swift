@@ -140,6 +140,7 @@ struct LiveView: View {
                             Label("\(recordedFrames)", systemImage: "record.circle.fill").foregroundStyle(.red)
                         }
                         Text(String(format: "%.1f FPS", framesPerSecond)).bold()
+                        VideoSoundButton(file: soundSource.file, stream: soundSource.stream).labelStyle(.iconOnly)
                     }
                     .font(.callout.monospacedDigit())
                     .padding(.horizontal, 10).padding(.vertical, 6)
@@ -339,6 +340,17 @@ struct LiveView: View {
         }
     }
 
+    /// The source whose sound plays (the first video or stream; see makeSources), for the sound button.
+    private var soundSource: (file: URL?, stream: Bool) {
+        switch sourceKind {
+        case .video: return (videoURL, false)
+        case .stream: return (nil, true)
+        default:
+            guard let first = extras.first else { return (nil, false) }
+            return first.kind == .video ? (first.videoURL, false) : (nil, true)
+        }
+    }
+
     private func makeSources() throws -> [FrameSource] {
         var sources: [FrameSource] = []
         switch sourceKind {
@@ -349,13 +361,16 @@ struct LiveView: View {
             guard let videoURL else { throw SourceError(description: "Choose a video first.") }
             sources.append(StreamSource(url: videoURL))
         }
+        // Only one source plays its sound: the first video or stream.
+        var soundTaken = sourceKind == .stream || sourceKind == .video
         for (offset, extra) in extras.enumerated() {
             switch extra.kind {
-            case .stream: sources.append(StreamSource(url: try address(extra.address)))
+            case .stream: sources.append(StreamSource(url: try address(extra.address), sound: !soundTaken))
             case .video:
                 guard let url = extra.videoURL else { throw SourceError(description: "Choose a video for source \(offset + 2) first.") }
-                sources.append(StreamSource(url: url))
+                sources.append(StreamSource(url: url, sound: !soundTaken))
             }
+            soundTaken = true
         }
         return sources
     }

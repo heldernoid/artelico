@@ -18,7 +18,7 @@ A Swift package (iOS 17 / macOS 14) shared by both apps, with the `ugen` command
   - `InferenceEngine.swift`: the protocol both engines implement;
   - `CoreMLEngine.swift`: the Core ML engine plus `.native.json` maps.
 - **Input:** `ImagePrep.swift` (letterbox, crop, 8-bit RGB), `Tiling.swift`, `VideoClip.swift`, `PacedVideo.swift`
-  (video files shown in even steps), `RTSPClient.swift` (RTSP over TCP, Basic/Digest, H.264 only, through
+  (video files shown in even steps), `VideoSound.swift` (their sound, following the frames shown), `RTSPClient.swift` (RTSP over TCP, Basic/Digest, H.264 only, through
   VideoToolbox), `LiveSources.swift`.
 - **Decoding:** `PostProcess.swift` and `PostProcess+*.swift`, one file per model family: YOLO / YOLO26, SCRFD and
   other face detectors, landmarks, attributes, YOLACT, segmentation, lanes, oriented boxes, text, super-resolution,

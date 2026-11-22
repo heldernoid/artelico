@@ -48,8 +48,13 @@ final class StreamSource: NSObject, FrameSource, URLSessionDataDelegate, @unchec
     private static let stillInterval: Duration = .seconds(3)
     private static let maxBufferedBytes = 8 * 1024 * 1024
 
-    init(url: URL) {
+    /// Whether this source may play its sound (Live gives it to one source only). The sound button
+    /// (`VideoSound.isOn`) turns it on or off while playing.
+    private let sound: Bool
+
+    init(url: URL, sound: Bool = true) {
         self.url = url
+        self.sound = sound
     }
 
     var failure: String? { paced?.failure ?? rtsp?.failure ?? box.failure }
@@ -67,7 +72,7 @@ final class StreamSource: NSObject, FrameSource, URLSessionDataDelegate, @unchec
             return
         }
         if url.isFileURL {
-            let reader = PacedVideoReader(url: url)
+            let reader = PacedVideoReader(url: url, sound: sound)
             paced = reader
             try await reader.start()
             return
@@ -207,7 +212,8 @@ final class StreamSource: NSObject, FrameSource, URLSessionDataDelegate, @unchec
         let output = AVPlayerItemVideoOutput(pixelBufferAttributes: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
         item.add(output)
         let player = AVPlayer(playerItem: item)
-        player.isMuted = true
+        player.isMuted = !(sound && VideoSound.isOn)
+        if sound { VideoSound.preparePlayback() }
         self.player = player
         self.videoOutput = output
 
@@ -247,6 +253,8 @@ final class StreamSource: NSObject, FrameSource, URLSessionDataDelegate, @unchec
         timer.schedule(deadline: .now(), repeating: .milliseconds(8))
         timer.setEventHandler { [weak self] in
             guard let self, let output = self.videoOutput, let player = self.player else { return }
+            let muted = !(self.sound && VideoSound.isOn)
+            if player.isMuted != muted { player.isMuted = muted }   // the sound button
             let time = player.currentTime()
             guard output.hasNewPixelBuffer(forItemTime: time),
                   let pixelBuffer = output.copyPixelBuffer(forItemTime: time, itemTimeForDisplay: nil) else { return }

@@ -469,6 +469,7 @@ struct PoseControls: View {
                 }
                 if runner.source == .video {
                     PhotosPicker(runner.videoURL == nil ? "Choose a video" : "Other video", selection: $pickedVideo, matching: .videos)
+                    VideoSoundButton(file: runner.videoURL)
                 }
                 if runner.source == .picture {
                     PhotosPicker(runner.picture == nil ? "Choose a photo" : "Other photo", selection: $pickedPhoto, matching: .images)
@@ -487,6 +488,7 @@ struct PoseControls: View {
                         .textFieldStyle(.roundedBorder).frame(width: 260)
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
                     Button { showCameras = true } label: { Label("Road cameras", systemImage: "road.lanes") }
+                    VideoSoundButton(stream: true)
                 }
                 Picker("Model", selection: $runner.modelName) {
                     ForEach(runner.models(installed: studio.installed)) { model in

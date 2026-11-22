@@ -3399,3 +3399,34 @@ Step 117's fix, ported to Artelico Web (and so the Space, through web/tools/buil
   - whisper-base with the language: Italian, English word for word; Portuguese, Spanish, French, German close
     (names misheard: "Krieger Samsa", "Estevan"). 0.4–1.4 s per clip after loading.
 - The Space leaves out `samples/speech` (no speech pages there).
+
+## Step 125: video sound and speech samples in the apps; Space republished
+
+- **Space** helmo/artelico republished (commit ff6b0da): the video sound, the sidebar note, sample videos that switch
+  while running. It keeps its sample videos (FOLLOWUPS item 8) and leaves out `samples/speech`.
+- **Video sound** (both apps):
+  - `StudioCore/VideoSound.swift`: an audio-only AVPlayer (an AVMutableComposition of the sound track, so the video
+    is not decoded twice) moved back to the shown frame's presentation time when they drift more than 0.25 s apart;
+    paused when no frame came for 1 s. `VideoSound.isOn` ("video.sound", on by default). On iOS it sets the audio
+    session to playback (the speech screens leave it on record).
+  - `PacedVideoReader(url:sound:)` keeps each decoded frame's presentation time and lets the sound follow it.
+  - `StreamSource(url:sound:)` (both copies): files through VideoSound; streams unmute their own AVPlayer while the
+    setting is on. Live gives the sound to one source only, the first video or stream.
+  - `Examples/VideoSoundButton.swift` (shared): shown for a file with a sound track (checked with
+    `loadTracks(.audio)`) and for streams. In the demo controls and in both Live screens (outside the controls that
+    are disabled while running; Hailo Studio's row now disables its pickers one by one).
+  - SwiftUI runs no `.task` on an empty view, so the button keeps a zero-size placeholder while hidden; without it
+    the check never ran and the button never appeared.
+- **Speech screens** (both apps): `Examples/SpeechSamples.swift` (shared): the web's seven samples (the six new
+  MP3s copied into both `Samples/`), a player for the audio used (sample, file copied to temporary storage,
+  recording) that remembers muting ("audio.muted"), a Samples menu. A sample sets the language. Artelico already
+  detected the language (WhisperKit `detectLanguage`); Hailo Studio leaves it empty for the stick to detect.
+  `-speechsample <file>` with `-autospeech`.
+- Fixed on the way: Artelico's "Downloading openai_whisper-base…" bar stayed after the download (a late progress
+  update set it again after `defer { speechProgress = nil }`).
+- Checked on the Mac (Artelico, Debug, Mac Catalyst): Squat alarm with the squats video: "CoreMedia Playback" and
+  audio-out to the built-in speakers while running; with `-video.sound NO` the button shows "Muted" next to "Other
+  video". Speech: `-autospeech -speechsample assis_pt.mp3`: player with the title and LibriVox credit, Portuguese
+  detected ("language: pt"), 16.6 s in 0.73 s with whisper-base. Both apps build for Mac Catalyst and iOS; UGenKit
+  213 tests, 0 failures.
+- Not checked: Hailo Studio running (the stick was not on this Mac); the devices (not reinstalled).

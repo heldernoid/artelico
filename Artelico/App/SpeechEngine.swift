@@ -44,7 +44,10 @@ extension StudioModel {
             speechProgress = 0
             defer { speechProgress = nil }
             let downloaded = try await WhisperKit.download(variant: variant, downloadBase: Self.whisperFolder) { [weak self] progress in
-                Task { @MainActor in self?.speechProgress = progress.fractionCompleted }
+                Task { @MainActor in
+                    // A late update must not bring the bar back once the download has finished (speechProgress nil).
+                    if self?.speechProgress != nil { self?.speechProgress = progress.fractionCompleted }
+                }
             }
             // Remember it relative to the whisper folder, which survives moving the models folder.
             let base = Self.whisperFolder.standardizedFileURL.path

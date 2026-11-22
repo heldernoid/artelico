@@ -3,7 +3,8 @@ import SwiftUI
 import UGenKit
 import UniformTypeIdentifiers
 
-/// Speech to text with Whisper on the stick: record with the microphone or open an audio file.
+/// Speech to text with Whisper on the stick: record with the microphone, open an audio file, or try a
+/// bundled sample (six languages, SpeechSamples.swift). The audio used is shown in a player.
 struct SpeechView: View {
     @EnvironmentObject private var studio: StudioModel
     @AppStorage("speech.translate") private var translate = false
@@ -15,6 +16,7 @@ struct SpeechView: View {
     @State private var recorder: AVAudioRecorder?
     @State private var recordingSince: Date?
     @State private var choosingFile = false
+    @StateObject private var clip = AudioClip()
 
     private var recordingURL: URL { FileManager.default.temporaryDirectory.appendingPathComponent("hailo-studio-recording.wav") }
     private var transcript: String { segments.map(\.text).joined().trimmingCharacters(in: .whitespaces) }
@@ -27,7 +29,7 @@ struct SpeechView: View {
                     .tint(recorder == nil ? .accentColor : .red)
                     .disabled(working)
                 Button("Open audio file") { choosingFile = true }.disabled(working || recorder != nil)
-                Button("Try the sample") { transcribeSample() }.disabled(working || recorder != nil)
+                SpeechSampleMenu { transcribeSample($0) }.disabled(working || recorder != nil)
                 Toggle("Translate to English", isOn: $translate).fixedSize()
                 TextField("Language code (blank = detect)", text: $language)
                     .textFieldStyle(.roundedBorder).frame(width: 230)
@@ -40,6 +42,7 @@ struct SpeechView: View {
                 }
                 if working { ProgressView() }
             }
+            AudioClipView(clip: clip)
             if !info.isEmpty { Text(info).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
             if !note.isEmpty { Text(note).font(.callout).foregroundStyle(.red) }
 
@@ -63,24 +66,38 @@ struct SpeechView: View {
             }
         }
         .onAppear {
-            // `-autospeech` transcribes the bundled sample at launch (used when testing from the Mac).
-            if CommandLine.arguments.contains("-autospeech"), !working { transcribeSample() }
+            // `-autospeech` transcribes a bundled sample at launch (used when testing from the Mac).
+            // `-speechsample <file>` picks which sample (for example assis_pt.mp3).
+            if CommandLine.arguments.contains("-autospeech"), !working {
+                let arguments = CommandLine.arguments
+                let wanted = arguments.firstIndex(of: "-speechsample").flatMap { $0 + 1 < arguments.count ? arguments[$0 + 1] : nil }
+                transcribeSample(SpeechSample.all.first { $0.file == wanted } ?? SpeechSample.all[0])
+            }
         }
         .fileImporter(isPresented: $choosingFile, allowedContentTypes: [.audio, .movie]) { result in
             guard case .success(let url) = result else { return }
+            // A copy, so the player can keep it after the file's access ends.
             let accessed = url.startAccessingSecurityScopedResource()
-            transcribe(url) { if accessed { url.stopAccessingSecurityScopedResource() } }
+            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+            let copy = FileManager.default.temporaryDirectory.appendingPathComponent("hailo-studio-audio-" + url.lastPathComponent)
+            try? FileManager.default.removeItem(at: copy)
+            do { try FileManager.default.copyItem(at: url, to: copy) } catch { note = "\(error.localizedDescription)"; return }
+            clip.use(copy, caption: url.lastPathComponent, play: true)
+            transcribe(copy) {}
         }
     }
 
-    /// A short spoken sentence shipped with the app, for trying speech to text without recording.
-    private func transcribeSample() {
-        guard let url = Bundle.main.url(forResource: "speech_sample", withExtension: "wav") else { return }
+    /// A spoken sample shipped with the app: it sets the language, plays, and is transcribed.
+    private func transcribeSample(_ sample: SpeechSample = SpeechSample.all[0]) {
+        guard let url = sample.url else { return }
+        language = sample.language
+        clip.use(url, caption: sample.title, sample: sample, play: true)
         transcribe(url) {}
     }
 
     private func startRecording() {
         note = ""
+        clip.pause()
         Task {
             guard await AVAudioApplication.requestRecordPermission() else {
                 note = "Microphone access is off. Allow it in Settings > Apps > Hailo Studio."
@@ -102,10 +119,12 @@ struct SpeechView: View {
     }
 
     private func stopRecording() {
+        let seconds = recordingSince.map { Date().timeIntervalSince($0) } ?? 0
         recorder?.stop()
         recorder = nil
         recordingSince = nil
         try? AVAudioSession.sharedInstance().setActive(false)
+        clip.use(recordingURL, caption: String(format: "Your recording (%.0f s)", seconds), play: false)
         transcribe(recordingURL) {}
     }
 

@@ -44,6 +44,7 @@ public struct FramePacer: Sendable {
 
 /// A video file read frame by frame (not played), shown in even steps (FramePacer), looping at the end.
 /// Frames are decoded a few ahead on a background queue; only the frames shown become pictures.
+/// With `sound`, the file's sound plays along, following the frames shown (VideoSound).
 public final class PacedVideoReader: @unchecked Sendable {
     private let url: URL
     private let lock = NSLock()
@@ -51,15 +52,21 @@ public final class PacedVideoReader: @unchecked Sendable {
     private let context = CIContext()
     private var pacer = FramePacer(frameRate: 30)
     private var orientation: CGImagePropertyOrientation = .up
-    private var decoded: [CVPixelBuffer] = []
+    private var decoded: [(buffer: CVPixelBuffer, seconds: Double)] = []
+    private let wantsSound: Bool
+    private var sound: VideoSound?
     private var running = false
     private var problem: String?
     /// Frames decoded ahead at most (a few, so memory stays small).
     private static let ahead = 8
 
-    public init(url: URL) {
+    public init(url: URL, sound: Bool = false) {
         self.url = url
+        self.wantsSound = sound
     }
+
+    /// Whether the file's sound is playing along (it has a sound track and `sound` was asked for).
+    public var playsSound: Bool { lock.withLock { sound != nil } }
 
     public var failure: String? { lock.withLock { problem } }
 
@@ -75,16 +82,18 @@ public final class PacedVideoReader: @unchecked Sendable {
             orientation = [90: .right, 180: .down, 270: .left][(degrees + 360) % 360] ?? .up
             running = true
         }
+        if wantsSound, let sound = await VideoSound(url: url) { lock.withLock { self.sound = sound } }
         queue.async { [weak self] in self?.decodeLoop(asset: asset, track: track) }
     }
 
     public func stop() {
-        lock.withLock { running = false; decoded = [] }
+        let sound = lock.withLock { running = false; decoded = []; let s = self.sound; self.sound = nil; return s }
+        sound?.stop()
     }
 
     /// The next frame to show, or nil when none is due yet.
     public func takeLatest() -> CGImage? {
-        let buffer: CVPixelBuffer? = lock.withLock {
+        let chosen: (buffer: CVPixelBuffer, seconds: Double)? = lock.withLock {
             guard !decoded.isEmpty else { return nil }
             let steps = pacer.advance(now: ProcessInfo.processInfo.systemUptime)
             guard steps > 0 else { return nil }
@@ -94,7 +103,8 @@ public final class PacedVideoReader: @unchecked Sendable {
             decoded.removeFirst(index + 1)
             return chosen
         }
-        guard let buffer else { return nil }
+        guard let (buffer, seconds) = chosen else { return nil }
+        lock.withLock { sound }?.follow(seconds)
         let image = CIImage(cvPixelBuffer: buffer).oriented(orientation)
         return context.createCGImage(image, from: image.extent)
     }
@@ -114,7 +124,8 @@ public final class PacedVideoReader: @unchecked Sendable {
                 }
                 guard let sample = output.copyNextSampleBuffer() else { break }   // the end: start again
                 guard let buffer = CMSampleBufferGetImageBuffer(sample) else { continue }
-                lock.withLock { decoded.append(buffer) }
+                let seconds = CMSampleBufferGetPresentationTimeStamp(sample).seconds
+                lock.withLock { decoded.append((buffer, seconds.isFinite ? seconds : 0)) }
                 frames += 1
             }
             reader.cancelReading()

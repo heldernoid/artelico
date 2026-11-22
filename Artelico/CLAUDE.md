@@ -61,7 +61,11 @@ Dependencies:
     - `PoseKit.swift`: the runner, frames, the model loop and its `filter` hook (used by the Privacy camera);
     - `HandKit.swift`, `ExampleHost.swift`, `LiveSourceViews.swift`;
     - `SampleMedia.swift`: the sample pictures and Hailo's demo videos, downloaded on first use and checked by
-      SHA-256.
+      SHA-256;
+    - `SpeechSamples.swift`: the spoken samples (six languages, public domain, in `Samples/`), the speech screens'
+      player (`AudioClip`, `AudioClipView`) and Samples menu;
+    - `VideoSoundButton.swift`: the sound on/off button of every screen that runs video (`VideoSound.isOn` in
+      StudioCore), shown when the chosen file has a sound track.
 - **`Samples/`:** pictures and a spoken sample, bundled. Credits are in `SampleMedia.swift`.
 
 ## Launch arguments (Debug testing)
@@ -72,8 +76,10 @@ Passed with `xcrun devicectl device process launch … --` on a device, or as th
   - `-section <live|chat|ask|speech|device|privacy|…>` opens a screen;
   - `-sample <file>` / `-samplevideo <file>` picks a sample;
   - `-autostart` / `-autorun` starts it.
-- **Language and speech:** `-chat <text>`, `-ask <question>`, `-autospeech`, `-chatmodel`, `-askmodel`,
-  `-speechmodel`.
+- **Language and speech:** `-chat <text>`, `-ask <question>`, `-autospeech` (with `-speechsample <file>`, e.g.
+  `assis_pt.mp3`), `-chatmodel`, `-askmodel`, `-speechmodel`.
+- **Settings for one run:** any setting can be given as `-<key> <value>`, e.g. `-video.sound NO` or
+  `-audio.muted YES` (silent tests on the Mac).
 - **Models:** `-modelsfolder <path>` uses another models folder; in the Mac Debug build it may point under
   `~/.artelico/`. `-redownload <model>` deletes a model, downloads it again and runs it.
 - **Server and benchmarks:** `-api` starts the REST API, and `-nativebench` runs the benchmarks.

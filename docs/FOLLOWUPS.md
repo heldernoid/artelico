@@ -41,6 +41,10 @@ date once it's settled. Details are in history/LOG.md at the step named.
 8. **Space videos.** The web now falls back to Hugging Face for sample videos, so `build_space.py` could leave out
    `samples/videos` (item 4: the Space would shrink to about 75 MB). Not done yet.
 
+9. **Hailo Studio: video sound and speech samples untested on the stick** (Step 125). Same shared code as Artelico,
+   which was checked on the Mac; run Live / a demo with the squats video and Speech with a sample when the stick is
+   on the Mac or the iPad. Neither app has been reinstalled on the iPad or iPhone since Step 123.
+
 ## Known gaps (could be done when wanted)
 
 - **Web Live has no "Track" switch**, so its boxes aren't steadied (the pose and example screens are) (Step 118).

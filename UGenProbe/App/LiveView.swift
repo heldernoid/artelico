@@ -83,22 +83,25 @@ struct LiveView: View {
     var body: some View {
         VStack(spacing: 10) {
             HStack {
-                TaskModelPicker(task: $task, modelName: $modelName, live: true)
-                TaskOptions(task: task, tiles: $tiles, promptText: $promptText)
-                Picker("Source", selection: $sourceKind) {
-                    ForEach(LiveSourceKind.allCases) { Text($0.rawValue).tag($0) }
+                Group {
+                    TaskModelPicker(task: $task, modelName: $modelName, live: true)
+                    TaskOptions(task: task, tiles: $tiles, promptText: $promptText)
+                    Picker("Source", selection: $sourceKind) {
+                        ForEach(LiveSourceKind.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                    .fixedSize()
                 }
-                .pickerStyle(.menu)
-                .fixedSize()
+                .disabled(running)
                 Spacer()
                 if running {
                     if recording {
                         Label("\(recordedFrames) frames", systemImage: "record.circle.fill").foregroundStyle(.red).font(.callout.monospacedDigit())
                     }
                     Text(String(format: "%.1f FPS", framesPerSecond)).font(.title3.monospacedDigit().bold())
+                    VideoSoundButton(file: soundSource.file, stream: soundSource.stream).labelStyle(.iconOnly)
                 }
             }
-            .disabled(running)
             .padding(.horizontal)
 
             if sourceKind == .stream {
@@ -308,6 +311,17 @@ struct LiveView: View {
         }
     }
 
+    /// The source whose sound plays (the first video or stream; see makeSources), for the sound button.
+    private var soundSource: (file: URL?, stream: Bool) {
+        switch sourceKind {
+        case .video: return (videoURL, false)
+        case .stream: return (nil, true)
+        default:
+            guard let first = extras.first else { return (nil, false) }
+            return first.kind == .video ? (first.videoURL, false) : (nil, true)
+        }
+    }
+
     private func makeSources() throws -> [FrameSource] {
         var sources: [FrameSource] = []
         switch sourceKind {
@@ -318,13 +332,16 @@ struct LiveView: View {
             guard let videoURL else { throw SourceError(description: "Choose a video first.") }
             sources.append(StreamSource(url: videoURL))
         }
+        // Only one source plays its sound: the first video or stream.
+        var soundTaken = sourceKind == .stream || sourceKind == .video
         for (offset, extra) in extras.enumerated() {
             switch extra.kind {
-            case .stream: sources.append(StreamSource(url: try address(extra.address)))
+            case .stream: sources.append(StreamSource(url: try address(extra.address), sound: !soundTaken))
             case .video:
                 guard let url = extra.videoURL else { throw SourceError(description: "Choose a video for source \(offset + 2) first.") }
-                sources.append(StreamSource(url: url))
+                sources.append(StreamSource(url: url, sound: !soundTaken))
             }
+            soundTaken = true
         }
         return sources
     }
