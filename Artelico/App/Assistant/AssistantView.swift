@@ -95,6 +95,8 @@ final class AssistantEngine: ObservableObject {
             stage = .choosing
             var mark = clock.now
             if selector == nil {
+                // all_minilm_l6_v2 and its vocab.txt: fetched here when missing (90 MB, once).
+                try await studio.ensureModelFiles(ToolSelector.modelName)
                 let created = try await ToolSelector(folder: StudioModel.modelsDirectory)
                 try await created.prepare(AssistantTools.all)
                 selector = created

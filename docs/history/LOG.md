@@ -3487,3 +3487,11 @@ Step 117's fix, ported to Artelico Web (and so the Space, through web/tools/buil
   in the demo. All 11 sample videos seek without failures in headless Chrome now.
 - Uploaded to helmo/artelico-models samples/videos with a README (source, licence, the change): revision f9537295.
   VIDEOS_ONLINE (web) and SampleMedia.videoBase + videoChecks (apps) point to it. web/samples/videos has the new file.
+
+## Step 131: Assistant on the iPhone: "needs all_minilm_l6_v2.mlpackage and its vocab.txt" (2026-11-22)
+
+- The package was on the phone (so it counted as downloaded) but not its vocab.txt (copied before the vocabulary was
+  in the repository); nothing fetched it. Now: the Assistant calls ensureModelFiles (package if missing, then any
+  missing file next to it, SHA-256 checked), and refreshModelMaps fetches missing side files for every installed
+  model at launch. Mac: vocab.txt moved away, `-assistant "what time is it"` fetched it again (same SHA-256) and
+  answered (get_time, 0.92). iOS Release installed on iPad and iPhone (not launched).

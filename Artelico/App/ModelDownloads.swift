@@ -65,6 +65,9 @@ extension StudioModel {
                 try? data.write(to: local, options: .atomic)
             }
         }
+        // Other files next to a package (a tokenizer's vocab.txt, CLIP tables) that are missing: a package copied or
+        // downloaded before they were added to the repository.
+        for name in installed { try? await fetchMissingSideFiles(of: name) }
         // A package re-converted in the repository (e.g. clip_resnet_50_text_encoder, float16 -> float32) has a new
         // Manifest.json inside: download that model again; the old copy stays usable until the new one is in.
         for name in installed {
@@ -74,6 +77,36 @@ extension StudioModel {
             guard fm.fileExists(atPath: local.path), (try? Self.sha256(of: local)) != file.sha256 else { continue }
             try? await download(model, replacing: true)
         }
+    }
+
+    /// Downloads the files the manifest lists next to `name`'s package (not inside it) that are not in the models
+    /// folder, each checked by SHA-256.
+    func fetchMissingSideFiles(of name: String) async throws {
+        let manifest = try await remoteManifest()
+        let fm = FileManager.default
+        for file in manifest.models[name]?.coreml ?? [] where !file.path.contains(".mlpackage/") {
+            let local = Self.modelsDirectory.appendingPathComponent(String(file.path.dropFirst("coreml/".count)))
+            if fm.fileExists(atPath: local.path) { continue }
+            let (temporary, response) = try await FileDownloader.download(Self.modelRepositoryURL.appendingPathComponent(file.path)) { _ in }
+            guard (response as? HTTPURLResponse)?.statusCode == 200,
+                  (try await Task.detached(priority: .utility) { try Self.sha256(of: temporary) }.value) == file.sha256 else {
+                try? fm.removeItem(at: temporary)
+                throw StudioError.invalidInput("Download of \(file.path) failed. Try again.")
+            }
+            try fm.moveItem(at: temporary, to: local)
+        }
+    }
+
+    /// A model used by name outside the vision screens (the assistant's MiniLM): its package is downloaded when it is
+    /// missing, and any file next to it that is missing.
+    func ensureModelFiles(_ name: String) async throws {
+        if !installed.contains(name) {
+            guard let model = ModelCatalog.model(named: name) else {
+                throw StudioError.invalidInput("\(name) is not in the model list.")
+            }
+            try await download(model)
+        }
+        try await fetchMissingSideFiles(of: name)
     }
 
     /// Downloads `model` (Core ML package, output map and any extra files) into the models folder.
