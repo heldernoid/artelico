@@ -2,6 +2,7 @@
 import { loadCatalog, Catalog } from "./core/catalog.js";
 import { OnnxEngine, backend, settings } from "./core/engine.js";
 import { ServerSource, FolderSource, defaultSource } from "./core/source.js";
+import { store } from "./ui/common.js";
 
 /** Shared state: the engine, where models come from, and which models are available. */
 export const app = {
@@ -34,6 +35,25 @@ export const app = {
       try { this.sizes = (await (await fetch(`${this.source.base}/index.json`)).json()).sizes ?? {}; } catch { this.sizes = {}; }
     }
     this.changed();
+  },
+
+  /**
+   * True when `name` and its `extras` can run without downloading anything: loaded already, or in the browser's
+   * cache (or the chosen models folder). Screens run on their own only then; otherwise they wait for Run, so a
+   * download always starts from the user's click.
+   */
+  async isDownloaded(name, extras = []) {
+    for (const n of [name, ...extras]) {
+      if (this.engine.loadedModelNames.includes(n)) continue;
+      try { if (!(await this.source.cached?.(n))) return false; } catch { return false; }
+    }
+    return true;
+  },
+
+  /** "yolov5m_wo_spp (91 MB)", for "press Run to download …". */
+  downloadLabel(names) {
+    const total = names.reduce((sum, n) => sum + (this.sizes[n] ?? 0), 0);
+    return `${names.join(" + ")}${total ? ` (${mb(total)} MB)` : ""}`;
   },
 
   /** Loads `name` (and `extras` next to it), with download progress in the status box. */
@@ -161,6 +181,21 @@ async function start() {
   document.getElementById("close-nav").onclick = () => document.getElementById("sidebar").classList.remove("open");
   await show();
 }
+
+// The welcome page (index.html): "Open Artelico" leaves it for good; "About Artelico" in the sidebar brings it back.
+for (const b of document.querySelectorAll("[data-enter]")) {
+  b.onclick = () => {
+    store.set("welcomed", "1");
+    delete document.documentElement.dataset.welcome;
+    scrollTo(0, 0);
+  };
+}
+document.querySelector("[data-welcome-again]")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  document.documentElement.dataset.welcome = "";
+  document.getElementById("sidebar").classList.remove("open");
+  scrollTo(0, 0);
+});
 
 start().catch((error) => {
   document.getElementById("view").innerHTML = `<h1>Artelico Web</h1><p class="error">Could not start: ${error.message ?? error}</p>`;

@@ -104,3 +104,16 @@ td, th { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line
   h1 { font-size: 24px; }
 }
 @media (min-width: 721px) { .only-narrow { display: none; } }
+
+/* The welcome page (index.html): shown instead of the apps while <html data-welcome> is set. */
+.welcome { display: none; max-width: 680px; margin: 0 auto; padding: 32px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+html[data-welcome] .welcome { display: block; }
+html[data-welcome] .shell { display: none; }
+.welcome-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; margin-bottom: 28px; }
+.welcome h1 { font-size: 30px; line-height: 1.2; margin: 0 0 12px; }
+.welcome h2 { font-size: 18px; margin: 28px 0 8px; }
+.welcome p, .welcome li { line-height: 1.55; }
+.welcome ul { padding-left: 20px; margin: 0; display: grid; gap: 6px; }
+.welcome .muted { color: var(--muted); }
+.welcome .small { font-size: 13px; }
+html[data-edition="space"] .only-site { display: none; }

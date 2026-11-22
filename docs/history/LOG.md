@@ -3448,3 +3448,22 @@ Step 117's fix, ported to Artelico Web (and so the Space, through web/tools/buil
   `whisperDownloads`, cancellable (Stop). The speech screens use it too.
 - Mac: 21 models listed (26.6 GB), base ✓; whisper-tiny downloaded through the new path, loaded in 19 s and
   transcribed the German sample. iOS Release installed on the iPad and iPhone (not launched); Artelico DMG rebuilt.
+
+## Step 128: model card links (2026-11-22)
+
+- helmo/artelico-models README (commit 000922e): links to artelico.com and github.com/heldernoid/artelico. Same text in
+  `native/tools/package_hf.py`. Card only; the apps' pinned revision needs no change (no model files touched).
+
+## Step 129: a plain welcome page for the web edition (2026-11-22)
+
+- Five design directions were proposed (artifact); the user preferred "a normal thing" without hype. Built a plain
+  page in web/index.html instead: what Artelico is (the user's wording: an experiment in running computer vision and
+  small speech-to-text, language and vision-language models on any device), what is here, how it works, other ways
+  to run it, links, and Open Artelico. Shown once (artelico.welcomed), skipped for #screen links and in the Space;
+  "About Artelico" in the sidebar brings it back.
+- Checked in headless Chrome: desktop, dark, a #squat link opens the screen directly. Not yet exported or pushed.
+- Downloads only on a click: Photos no longer runs the default model on opening (it downloaded yolov5m_wo_spp,
+  91 MB, on every first visit). A new picture runs by itself only when the model is cached (`app.isDownloaded`);
+  otherwise "Press Run to download … (N MB)". Speech to text: a sample or file waits for Transcribe until Whisper
+  was downloaded once; Meeting notes has a Write notes button. Checked headless: nothing downloaded on opening,
+  Run downloaded and ran (4 person, 1 bus), the next sample ran at once; Speech sample → "Press Transcribe", no download.

@@ -7,8 +7,57 @@
   <meta name="description" content="Vision and language models running in your browser. Nothing leaves this computer.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='15' fill='%23401a5c'/><text x='14' y='44' font-family='system-ui' font-weight='700' font-size='34' fill='white'>a<tspan fill='%23fa9e6b'>.</tspan></text></svg>">
   <link rel="stylesheet" href="css/app.css">
+  <script>
+    // The welcome page: shown on a first visit that names no screen (no #hash), until "Open Artelico".
+    // Not in the Hugging Face Space build (data-edition="space"). See js/app.js for the buttons.
+    try {
+      const root = document.documentElement;
+      if (root.dataset.edition !== "space" && !location.hash && !localStorage.getItem("artelico.welcomed")) root.dataset.welcome = "";
+    } catch { /* storage blocked: go straight to the apps */ }
+  </script>
 </head>
 <body>
+  <article class="welcome" id="welcome" aria-labelledby="welcome-title">
+    <header class="welcome-brand"><span class="logo" aria-hidden="true">a<b>.</b></span><span>Artelico</span></header>
+    <h1 id="welcome-title">Small models on any device</h1>
+    <p>Artelico is an experiment in running computer vision, and small speech-to-text, language and vision-language
+      models, on any device: a web browser, a phone or tablet, a laptop, or a small USB accelerator. It is open source.
+      This site is the browser version.</p>
+    <p><button class="button primary" data-enter>Open Artelico</button></p>
+
+    <h2>What is here</h2>
+    <ul>
+      <li><b>Photos and Live:</b> about 200 models for detection, pose, segmentation, depth, faces, text and more, on a
+        picture, the camera, a video file or a road camera.</li>
+      <li><b>Small apps built on them:</b> pose and hand games, counting people and cars, number plates, face check-in,
+        a privacy camera that blurs faces and plates.</li>
+      <li><b>Speech and language:</b> speech to text (Whisper), chat with small language models, and questions about
+        a picture with small vision-language models.</li>
+    </ul>
+
+    <h2>How it works</h2>
+    <p>The models come from the Hailo Model Zoo, converted to run in a browser (ONNX Runtime Web, on the graphics chip
+      with WebGPU, or on the processor with WebAssembly). Each one downloads the first time it is used and is kept by the
+      browser for next time. Most vision models are under 50 MB; language models are larger.</p>
+    <p>Everything runs in this browser. Pictures, the camera and what you type stay on this computer; only the models
+      are downloaded.</p>
+
+    <h2>Other ways to run it</h2>
+    <ul>
+      <li><b>Artelico</b>, an app for iPhone, iPad and Mac, runs the same models with Core ML.</li>
+      <li><b>Hailo Studio</b> runs them on a Hailo-10 USB accelerator connected to an iPad or Mac.</li>
+    </ul>
+    <p>Both are built from the source code.</p>
+
+    <h2>Links</h2>
+    <ul>
+      <li>Source code: <a href="https://github.com/heldernoid/artelico" target="_blank" rel="noopener">github.com/heldernoid/artelico</a> (AGPL-3.0)</li>
+      <li>Models: <a href="https://huggingface.co/helmo/artelico-models" target="_blank" rel="noopener">huggingface.co/helmo/artelico-models</a></li>
+    </ul>
+
+    <p><button class="button primary" data-enter>Open Artelico</button></p>
+    <p class="muted small">Works best in a recent version of Chrome, Edge or Safari. A computer with a graphics chip is faster.</p>
+  </article>
   <div class="shell">
     <nav class="sidebar" id="sidebar">
       <header class="brand">
@@ -19,7 +68,8 @@
       <div id="nav"></div>
       <footer class="status" id="status"></footer>
       <p class="about">Everything runs in this browser. Pictures, the camera and what you type stay on this computer;
-        only the models are downloaded. <a href="https://huggingface.co/helmo/artelico-models" target="_blank" rel="noopener">All the models on Hugging Face ↗</a></p>
+        only the models are downloaded. <a href="https://huggingface.co/helmo/artelico-models" target="_blank" rel="noopener">The models on Hugging Face ↗</a>
+        <span class="only-site">· <a href="#" data-welcome-again>About Artelico</a></span></p>
     </nav>
     <main class="content">
       <div class="topbar only-narrow">

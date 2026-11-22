@@ -70,3 +70,15 @@ Then upload the folder to a static Space with `huggingface_hub` (`HfApi().upload
   (`js/ui/hailo-videos.js`). A new upload to the model repository must not change what an old page loads.
 - **Things that need a server:** language models need WebGPU, and threads need the cross-origin isolation headers,
   which `serve.py` sends. A static host without them still works, with one WebAssembly thread.
+
+## Welcome page
+
+`index.html` starts with a plain welcome page (`#welcome`), shown on a first visit that names no screen (no `#hash`)
+until **Open Artelico** (`artelico.welcomed` in localStorage). "About Artelico" in the sidebar shows it again.
+The Space build (`data-edition="space"`) never shows it. Keep its wording plain and factual.
+
+## Downloads start from a click
+
+No screen downloads a model on its own. A screen may run by itself (a new picture, a chosen sample) only when the
+model is already here (`app.isDownloaded`, `Speech.isDownloaded`); otherwise it says "Press Run to download <model>
+(N MB)" and waits. Keep it that way in new screens.

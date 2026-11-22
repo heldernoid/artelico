@@ -317,9 +317,16 @@ export function speech(view) {
     } catch (error) { status.textContent = error.message ?? String(error); box.set(""); }
     working = false; again.disabled = !input.current();
   };
-  // A sample says its language; a file or a recording is detected unless a language is typed.
-  const input = audioInput((blob, sample) => { if (sample) language.value = sample.lang; transcribe(blob); }, status);
-  const again = el("button.button", { disabled: true, onclick: () => transcribe(input.current()) }, "Transcribe again");
+  // A sample says its language; a file or a recording is detected unless a language is typed. It is transcribed at
+  // once only when Whisper is already in this browser: the first download waits for Transcribe.
+  const input = audioInput((blob, sample) => {
+    if (sample) language.value = sample.lang;
+    again.disabled = false;
+    if (Speech.isDownloaded(model.value)) { transcribe(blob); return; }
+    const info = WHISPER_MODELS.find((m) => m.id === model.value);
+    status.textContent = `Press Transcribe to download ${info?.title ?? "Whisper"}${info?.mb ? `, about ${info.mb} MB` : ""}. It is kept in this browser for next time.`;
+  }, status);
+  const again = el("button.button.primary", { disabled: true, onclick: () => transcribe(input.current()) }, "Transcribe");
   view.append(el("div.toolbar", {}, input.controls, model, language, el("label", {}, translate, " Translate to English"), again), input.player, status, box);
 }
 
@@ -346,8 +353,20 @@ export function meetingNotes(view) {
       }
     } catch (error) { status.textContent = error.message ?? String(error); }
   };
-  const input = audioInput(process, status);
-  view.append(webgpuNote(), el("div.toolbar", {}, input.controls, whisper, model), input.player, status,
+  // Whisper and the language model download only when "Write notes" is pressed.
+  let chosen = null;
+  const input = audioInput((blob, sample) => {
+    chosen = { blob, sample };
+    write.disabled = false;
+    status.textContent = "Press Write notes to turn it into text and notes.";
+  }, status);
+  const write = el("button.button.primary", { disabled: true, onclick: async () => {
+    if (!chosen) return;
+    write.disabled = true;
+    await process(chosen.blob, chosen.sample);
+    write.disabled = false;
+  } }, "Write notes");
+  view.append(webgpuNote(), el("div.toolbar", {}, input.controls, whisper, model, write), input.player, status,
     twoColumns(el("div", {}, el("h2", {}, "Transcript"), transcript), el("div", {}, el("h2", {}, "Notes"), notes,
       el("p.small.muted", {}, "Nothing leaves this browser. Names and facts not said in the meeting are not invented (“Not mentioned”).")), 460));
 }

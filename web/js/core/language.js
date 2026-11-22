@@ -114,7 +114,14 @@ export const Speech = {
       },
     });
     whisperId = id;
+    try { localStorage.setItem(`artelico.whisper.${id}`, "1"); } catch { /* not kept */ }
     return whisper;
+  },
+
+  /** True when Whisper `id` is loaded, or was downloaded in this browser before (kept in its cache). */
+  isDownloaded(id) {
+    if (whisper && whisperId === id) return true;
+    try { return localStorage.getItem(`artelico.whisper.${id}`) === "1"; } catch { return false; }
   },
 
   /**

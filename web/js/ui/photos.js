@@ -68,7 +68,14 @@ export function mount(view, app) {
     if (res) drawResult(ctx, res, canvas.width, canvas.height);
   }
 
-  function setPicture(p) { picture = p; result.textContent = ""; timing.textContent = ""; draw(null); if (models.value) go(); }
+  // A new picture runs at once only when the model is already here; the first download waits for Run.
+  async function setPicture(p) {
+    picture = p; result.textContent = ""; timing.textContent = ""; draw(null);
+    if (!models.value) return;
+    const extras = companionsFor(task, Catalog.model(models.value));
+    if (await app.isDownloaded(models.value, extras)) { go(); return; }
+    result.textContent = `Press Run to download ${app.downloadLabel([models.value, ...extras.filter((n) => !app.engine.loadedModelNames.includes(n))])} and run it. It is kept in this browser for next time.`;
+  }
 
   async function go() {
     if (!picture) { result.textContent = "Choose a picture or a sample first."; return; }

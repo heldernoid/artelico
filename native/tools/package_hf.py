@@ -143,8 +143,10 @@ tags: [coreml, onnx, onnxruntime-web, computer-vision, on-device, apple-neural-e
 the browser (ONNX Runtime Web, WebGPU or WebAssembly). They are what the open-source Artelico apps download
 the first time a model is used. Nothing is sent to a server: pictures stay on the device.
 
-**Try them in your browser:** [Artelico Web on Spaces](https://huggingface.co/spaces/helmo/artelico)
-(direct link: https://helmo-artelico.static.hf.space).
+**Try them in your browser:** [artelico.com](https://artelico.com), or
+[Artelico Web on Spaces](https://huggingface.co/spaces/helmo/artelico).
+**Source code:** [github.com/heldernoid/artelico](https://github.com/heldernoid/artelico) (the apps, the web
+edition and the conversion tools; AGPL-3.0).
 
 The models are the networks of the [Hailo Model Zoo](https://github.com/hailo-ai/hailo_model_zoo) v5.3.0
 (MIT): detection (YOLOv5 to YOLO26, YOLOX, DAMO-YOLO, NanoDet, SSD, EfficientDet, DETR), classification
