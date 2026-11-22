@@ -44,6 +44,7 @@ struct DeviceView: View {
     }
 
     @State private var languageQueue: Task<Void, Never>?
+    @State private var speechQueue: Task<Void, Never>?
 
     var body: some View {
         List {
@@ -121,6 +122,7 @@ struct DeviceView: View {
             }
 
             languageSection
+            speechSection
 
             ForEach(taskOrder, id: \.self) { task in
                 let models = shown(task)
@@ -185,6 +187,74 @@ extension DeviceView {
             Text("Language models (GGUF)")
         } footer: {
             Text("Chat, Ask an image, the Assistant and the language examples run these with llama.cpp. They download from their makers' pages on Hugging Face (ggml-org, Qwen, bartowski), not from the Artelico model repository.")
+        }
+    }
+}
+
+extension DeviceView {
+    /// The Whisper models WhisperKit can run on this device, from argmaxinc/whisperkit-coreml.
+    @ViewBuilder var speechSection: some View {
+        let models = StudioModel.whisperModels.supported
+        let missing = models.filter { !studio.isWhisperDownloaded($0) }
+        let missingBytes = missing.reduce(0) { $0 + (studio.whisperSizes[$1] ?? 0) }
+        Section {
+            if let queue = speechQueue, !queue.isCancelled {
+                HStack {
+                    ProgressView().controlSize(.small)
+                    Text("Downloading the speech models one after another…").font(.callout)
+                    Spacer()
+                    Button("Stop", role: .destructive) { speechQueue?.cancel(); speechQueue = nil }.buttonStyle(.borderless)
+                }
+            } else if !missing.isEmpty {
+                Button {
+                    speechQueue = Task {
+                        for variant in missing where !Task.isCancelled {
+                            do { try await studio.downloadWhisper(variant) } catch { if !Task.isCancelled { studio.fail(error) } }
+                        }
+                        speechQueue = nil
+                    }
+                } label: {
+                    Label("Download all \(missing.count) speech models\(missingBytes > 0 ? " (\(formatBytes(missingBytes)))" : "")",
+                          systemImage: "arrow.down.circle.dotted")
+                }
+            }
+            ForEach(models, id: \.self) { variant in WhisperModelRow(variant: variant) }
+        } header: {
+            Text("Speech models (Whisper)")
+        } footer: {
+            Text("Speech to text, Meeting notes and the Assistant run these with WhisperKit (Core ML). They download from huggingface.co/\(StudioModel.whisperRepository), not from the Artelico model repository. Only the models this \(StudioModel.deviceKind) can run are listed; .en models understand English only.")
+        }
+        .task { await studio.fetchWhisperSizes() }
+    }
+}
+
+struct WhisperModelRow: View {
+    @EnvironmentObject private var studio: StudioModel
+    let variant: String
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(variant.replacingOccurrences(of: "openai_whisper-", with: "Whisper ").replacingOccurrences(of: "distil-whisper_", with: "Distil-Whisper "))
+                Text(variant == StudioModel.whisperModels.recommended ? "recommended for this \(StudioModel.deviceKind)" : variant)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if studio.isWhisperDownloaded(variant) {
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                Button(role: .destructive) { studio.deleteWhisper(variant) } label: { Image(systemName: "trash") }
+                    .buttonStyle(.borderless)
+            } else if let progress = studio.whisperDownloads[variant] {
+                ProgressView(value: progress).frame(width: 90)
+                Text("\(Int(progress * 100))%").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+            } else {
+                Button {
+                    Task { do { try await studio.downloadWhisper(variant) } catch { studio.fail(error) } }
+                } label: {
+                    Label(studio.whisperSizes[variant].map { formatBytes($0) } ?? "Download", systemImage: "arrow.down.circle")
+                }
+                .buttonStyle(.borderless)
+            }
         }
     }
 }

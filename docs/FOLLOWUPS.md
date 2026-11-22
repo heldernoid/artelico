@@ -43,7 +43,7 @@ date once it's settled. Details are in history/LOG.md at the step named.
 
 9. **Hailo Studio: video sound and speech samples untested on the stick** (Step 125). Same shared code as Artelico,
    which was checked on the Mac; run Live / a demo with the squats video and Speech with a sample when the stick is
-   on the Mac or the iPad. Neither app has been reinstalled on the iPad or iPhone since Step 123.
+   on the Mac or the iPad (Release builds with these changes are installed on the iPad, Step 126).
 
 ## Known gaps (could be done when wanted)
 

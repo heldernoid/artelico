@@ -6,6 +6,8 @@ import WhisperKit
 /// Holds the loaded Whisper model for `StudioModel`.
 final class LoadedWhisper: @unchecked Sendable {
     var kit: WhisperKit?
+    /// Downloads in progress, by variant (used on the main actor only), so a second request waits for the first.
+    var downloads: [String: Task<URL, Error>] = [:]
 }
 
 /// Speech to text with Whisper on this device (WhisperKit: Core ML, mostly on the Neural Engine).
@@ -43,18 +45,7 @@ extension StudioModel {
             status = "Downloading \(variant)…"
             speechProgress = 0
             defer { speechProgress = nil }
-            let downloaded = try await WhisperKit.download(variant: variant, downloadBase: Self.whisperFolder) { [weak self] progress in
-                Task { @MainActor in
-                    // A late update must not bring the bar back once the download has finished (speechProgress nil).
-                    if self?.speechProgress != nil { self?.speechProgress = progress.fractionCompleted }
-                }
-            }
-            // Remember it relative to the whisper folder, which survives moving the models folder.
-            let base = Self.whisperFolder.standardizedFileURL.path
-            let full = downloaded.standardizedFileURL.path
-            let relative = full.hasPrefix(base) ? String(full.dropFirst(base.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/")) : full
-            UserDefaults.standard.set(relative, forKey: "whisper.folder.\(variant)")
-            folder = downloaded
+            folder = try await downloadWhisper(variant)
         }
         status = "Loading \(variant)…"
         let config = WhisperKitConfig(modelFolder: folder!.path, verbose: false, logLevel: .error, prewarm: true, load: true, download: false)
@@ -64,6 +55,64 @@ extension StudioModel {
         status = "Ready"
         return kit
     }
+
+    /// Downloads a Whisper model if it isn't here yet and returns its folder. Progress goes to
+    /// `whisperDownloads` (the Device screen) and `speechProgress` (the speech screens, while they wait).
+    /// A request for a model already downloading waits for that download; cancelling the caller stops it.
+    @discardableResult
+    func downloadWhisper(_ variant: String) async throws -> URL {
+        if let folder = downloadedWhisperFolder(variant) { return folder }
+        let task: Task<URL, Error>
+        if let running = speech.downloads[variant] {
+            task = running
+        } else {
+            task = Task { @MainActor in
+                whisperDownloads[variant] = 0
+                defer { whisperDownloads[variant] = nil; speech.downloads[variant] = nil }
+                let downloaded = try await WhisperKit.download(variant: variant, downloadBase: Self.whisperFolder) { [weak self] progress in
+                    let fraction = progress.fractionCompleted
+                    Task { @MainActor in
+                        // A late update must not bring a bar back once the download has finished.
+                        guard let self, self.whisperDownloads[variant] != nil else { return }
+                        self.whisperDownloads[variant] = fraction
+                        if self.speechProgress != nil { self.speechProgress = fraction }
+                    }
+                }
+                try Task.checkCancellation()
+                // Remember it relative to the whisper folder, which survives moving the models folder.
+                let base = Self.whisperFolder.standardizedFileURL.path
+                let full = downloaded.standardizedFileURL.path
+                let relative = full.hasPrefix(base) ? String(full.dropFirst(base.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/")) : full
+                UserDefaults.standard.set(relative, forKey: "whisper.folder.\(variant)")
+                objectWillChange.send()
+                return downloaded
+            }
+            speech.downloads[variant] = task
+        }
+        return try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+    }
+
+    /// Fetches the download size of every Whisper model once, from the Hugging Face API (one request).
+    func fetchWhisperSizes() async {
+        guard whisperSizes.isEmpty,
+              let url = URL(string: "https://huggingface.co/api/models/\(Self.whisperRepository)?blobs=true"),
+              let (data, response) = try? await URLSession.shared.data(from: url),
+              (response as? HTTPURLResponse)?.statusCode == 200 else { return }
+        struct Listing: Decodable {
+            struct File: Decodable { let rfilename: String; let size: Int? }
+            let siblings: [File]
+        }
+        guard let listing = try? JSONDecoder().decode(Listing.self, from: data) else { return }
+        var sizes: [String: Int] = [:]
+        for file in listing.siblings {
+            guard let slash = file.rfilename.firstIndex(of: "/") else { continue }
+            sizes[String(file.rfilename[..<slash]), default: 0] += file.size ?? 0
+        }
+        whisperSizes = sizes
+    }
+
+    /// Where WhisperKit's models come from.
+    static let whisperRepository = "argmaxinc/whisperkit-coreml"
 
     func deleteWhisper(_ variant: String) {
         if whisperModel == variant { speech.kit = nil; whisperModel = nil }

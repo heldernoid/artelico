@@ -49,6 +49,10 @@ final class StudioModel: ObservableObject {
     // `ModelInfo` type would clash with StudioCore's here).
     let speech = LoadedWhisper()
     @Published var whisperModel: String?
+    /// Whisper models downloading now, with how far along each is (0...1).
+    @Published var whisperDownloads: [String: Double] = [:]
+    /// Download size of each Whisper model, once fetched (`fetchWhisperSizes`).
+    @Published var whisperSizes: [String: Int] = [:]
 
     // Language models (see LanguageModels.swift, LlamaEngine.swift). One at a time.
     var llm: LlamaEngine?

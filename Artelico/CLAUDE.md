@@ -42,7 +42,9 @@ Dependencies:
   - `LanguageModels.swift`: GGUF models from Hugging Face (Qwen3, Gemma 3, Llama 3.2 and others);
   - `LlamaEngine.swift`: the llama.cpp C API, with Metal;
   - `ChatView.swift`, `AskImageView.swift`;
-  - `SpeechEngine.swift` + `SpeechView.swift`: WhisperKit; Whisper models from `argmaxinc/whisperkit-coreml`.
+  - `SpeechEngine.swift` + `SpeechView.swift`: WhisperKit; Whisper models from `argmaxinc/whisperkit-coreml`
+    (`downloadWhisper`, sizes from one Hugging Face API call). `DeviceView.swift` lists them ("Speech models
+    (Whisper)", with Download all), next to the vision and GGUF models.
 - **`Assistant/`:** a voice assistant.
   - Tools (`AssistantTools.swift`):
     - weather (Open-Meteo forecast and geocoding);

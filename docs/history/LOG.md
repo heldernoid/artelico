@@ -3430,3 +3430,21 @@ Step 117's fix, ported to Artelico Web (and so the Space, through web/tools/buil
   detected ("language: pt"), 16.6 s in 0.73 s with whisper-base. Both apps build for Mac Catalyst and iOS; UGenKit
   213 tests, 0 failures.
 - Not checked: Hailo Studio running (the stick was not on this Mac); the devices (not reinstalled).
+
+## Step 126: devices and DMGs (2026-11-22)
+
+- iOS Release with Steps 123–125: Artelico on the iPad and iPhone, Hailo Studio on the iPad (not launched).
+  The iOS Hailo Studio bundle is `UGenProbe/build-ios/Build/Products/Release-iphoneos/Hailo Studio.app`.
+- DMGs rebuilt with `tools/make_dmg.sh`: dist/Artelico-1.0.dmg (17 MB), dist/Hailo-Studio-1.0.dmg (45 MB),
+  checksums valid.
+
+## Step 127: Whisper models on the Device screen (2026-11-22)
+
+- Artelico's Device screen had no Whisper section, so "Download all" skipped them. Added "Speech models (Whisper)":
+  the variants WhisperKit supports on the device (recommended one marked), each with its size, download/progress
+  and delete, and "Download all N speech models (size)". Sizes: one call to the Hugging Face API
+  (`argmaxinc/whisperkit-coreml?blobs=true`).
+- `downloadWhisper(_:)` in SpeechEngine.swift: one download per model (a second request waits for it), progress in
+  `whisperDownloads`, cancellable (Stop). The speech screens use it too.
+- Mac: 21 models listed (26.6 GB), base ✓; whisper-tiny downloaded through the new path, loaded in 19 s and
+  transcribed the German sample. iOS Release installed on the iPad and iPhone (not launched); Artelico DMG rebuilt.
