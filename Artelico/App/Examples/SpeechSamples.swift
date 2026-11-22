@@ -140,10 +140,12 @@ struct AudioClipView: View {
 
 /// The Samples menu of the speech screens.
 struct SpeechSampleMenu: View {
+    /// The sample in the player, named on the menu.
+    var chosen: SpeechSample? = nil
     let choose: (SpeechSample) -> Void
 
     var body: some View {
-        Menu("Samples") {
+        Menu(chosen?.title ?? "Samples") {
             ForEach(SpeechSample.all) { sample in
                 Button(sample.title) { choose(sample) }
             }

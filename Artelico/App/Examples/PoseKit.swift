@@ -477,7 +477,8 @@ struct PoseControls: View {
                 // Sample pictures (when the example takes photos) and Hailo's demo videos.
                 let offered = samples.filter { SampleMedia.isVideo($0.file) ? sources.contains(.video) : sources.contains(.picture) }
                 if !offered.isEmpty {
-                    Menu("Samples") {
+                    // Named after the sample in use, so the choice stays visible.
+                    Menu(offered.first { $0.file == runner.sampleFile }?.title ?? "Samples") {
                         ForEach(offered, id: \.file) { sample in
                             Button(sample.title) { useSample(sample.file) }
                         }

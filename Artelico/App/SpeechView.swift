@@ -128,7 +128,7 @@ struct SpeechView: View {
             .tint(recorder == nil ? .accentColor : .red)
             .disabled(working)
         Button("Open file") { choosingFile = true }.disabled(working || recorder != nil)
-        SpeechSampleMenu { useSample($0) }.disabled(working || recorder != nil)
+        SpeechSampleMenu(chosen: clip.sample) { useSample($0) }.disabled(working || recorder != nil)
         // A sample or a file waits for this: choosing one only shows it in the player.
         Button("Transcribe") { if let url = clip.url { transcribe(url) {} } }
             .disabled(working || recorder != nil || clip.url == nil)

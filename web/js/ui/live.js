@@ -54,11 +54,23 @@ export function mount(view, app) {
       app.setStatus("Ready");
     }
   } }, "Start");
-  const samples = el("select", { "aria-label": "Sample", onchange: async () => { if (samples.value) await runner.useSample(samples.value); samples.value = ""; } },
-    el("option", { value: "" }, "Samples…"), [...SAMPLES, ...Object.values(VIDEOS)].map(([t, f]) => el("option", { value: f }, t)));
+  const offered = [...SAMPLES, ...Object.values(VIDEOS)];
+  const samples = el("select", { "aria-label": "Sample", onchange: async () => { if (samples.value) await runner.useSample(samples.value); } },
+    el("option", { value: "" }, "Samples…"), offered.map(([t, f]) => el("option", { value: f }, t)));
 
   const credit = creditTag();
-  runner.onSourceShown = credit.show;
+  // The credit, the sample named in the menu, and (stopped) a preview: choosing loads no model.
+  runner.onSourceShown = async (file) => {
+    credit.show(file);
+    samples.value = offered.some(([, f]) => f === file) ? file : "";
+    if (runner.running) return;
+    const still = await runner.previewFrame().catch(() => null);
+    if (runner.running) return;
+    if (!still) { canvas.hidden = true; placeholder.hidden = false; return; }
+    const ctx = sizeCanvas(canvas, still.videoWidth || still.naturalWidth || still.width, still.videoHeight || still.naturalHeight || still.height, 1280);
+    ctx.drawImage(still, 0, 0, canvas.width, canvas.height);
+    canvas.hidden = false; placeholder.hidden = true;
+  };
   view.append(
     el("h1", {}, "Live"),
     el("div.toolbar", {}, runner.controls(), samples, taskSelect, models, startButton, fps),

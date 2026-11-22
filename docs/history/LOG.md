@@ -3474,3 +3474,6 @@ Step 117's fix, ported to Artelico Web (and so the Space, through web/tools/buil
   "…download <model>…"; a running demo still switches. Speech to text: a sample or file plays and waits for a new
   Transcribe button (recording still transcribes on Stop). Mac: Squat alarm + squats video showed the preview, no
   model loaded. iOS Release installed: Artelico on iPad + iPhone, Hailo Studio on iPad (not launched). DMGs not rebuilt.
+- Samples show a preview everywhere: web demos and Live draw the picture or the video's first frame (runner.previewFrame)
+  and keep the chosen sample in the menu; the apps' Samples menus (demos, Speech) are named after the chosen sample.
+  Headless: Raise hand to flip + office video → preview, menu shows it, "Press Start…", nothing downloaded.

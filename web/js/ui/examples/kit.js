@@ -124,15 +124,31 @@ export function exampleScreen(view, app, o) {
     ? el("select", { "aria-label": "Samples", onchange: async () => {
         if (!samples.value) return;
         const wasRunning = runner.running;
-        await runner.useSample(samples.value);
-        samples.value = "";
+        await runner.useSample(samples.value);   // the menu keeps showing it (see onSourceShown below)
         if (wasRunning) { runner.stop(); while (runner.running) await new Promise((r) => setTimeout(r, 20)); start(); return; }
         // Starts by itself only when the models are already here; a download waits for Start.
         const missing = await app.notDownloaded(models.value, runner.extras());
         if (!missing.length) start(); else { message.className = "small muted"; message.textContent = app.pressToDownload("Start", missing); }
       } }, el("option", { value: "" }, "Samples…"), o.samples.map(([t, f]) => el("option", { value: f }, t)))
     : null;
-  runner.onSourceShown = credit.show;
+  // Whenever the source changes: the credit, the sample named in the menu, and (stopped) a preview of the picture
+  // or the video's first frame, so a choice shows at once without loading any model.
+  runner.onSourceShown = (file) => {
+    credit.show(file);
+    if (samples) samples.value = o.samples.some(([, f]) => f === file) ? file : "";
+    showPreview();
+  };
+  async function showPreview() {
+    if (runner.running) return;
+    const still = await runner.previewFrame().catch(() => null);
+    if (runner.running) return;
+    if (!still) { canvas.hidden = true; placeholder.hidden = false; return; }
+    const w = still.videoWidth || still.naturalWidth || still.width, h = still.videoHeight || still.naturalHeight || still.height;
+    last = null;
+    const ctx = sizeCanvas(canvas, w, h, 1280);
+    ctx.drawImage(still, 0, 0, canvas.width, canvas.height);
+    canvas.hidden = false; placeholder.hidden = true;
+  }
   const sourceBox = runner.controls();
   if (o.sources?.[0] === "picture") runner.source = "picture";
 

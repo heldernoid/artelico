@@ -368,6 +368,18 @@ export class FrameRunner {
     return el("span.toolbar", { style: { margin: 0 } }, select, extra, videoInput, photoInput);
   }
 
+  /** A still of the chosen picture, or the first frame of the chosen video, to show before Start (else null). */
+  async previewFrame() {
+    if (this.source === "picture") return this.picture ?? null;
+    if (this.source !== "video" || !this.videoURL) return null;
+    const v = document.createElement("video");
+    v.muted = true; v.playsInline = true; v.preload = "auto"; v.crossOrigin = "anonymous";
+    v.src = this.videoURL;
+    await new Promise((ok, fail) => { v.onloadeddata = ok; v.onerror = () => fail(new Error("The video could not be read.")); });
+    await new Promise((ok) => { v.onseeked = ok; v.currentTime = Math.min(0.1, (v.duration || 1) / 2); });
+    return v;
+  }
+
   /** Uses a bundled sample (a picture, or one of Hailo's demo videos) as the source. */
   async useSample(file) {
     this.sampleFile = file;
